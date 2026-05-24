@@ -22,26 +22,26 @@
 
   function fmt(ms) { const s = (ms / 1000) | 0; return `${String((s / 60) | 0).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; }
 
-  /* ---------- 建立 3D 方塊 DOM（只建一次，之後更新內容） ---------- */
+  /* ---------- 建立 3D 方塊 DOM（只建一次，之後更新內容） ----------
+     每個格子直接用它的 3D 座標 translate3d 定位（幾何精確、一致），
+     轉動的排列本來就是對座標做剛體旋轉，元素必定正確跟著格子移動。 */
+  const H = 70;                         // 立方體半徑（面在 ±H，面內格子在 ±H/2）
   function buildCube() {
-    const faces = {};
-    ['U', 'D', 'L', 'R', 'F', 'B'].forEach(f => {
-      const d = document.createElement('div'); d.className = 'cube-face cf-' + f; faces[f] = d;
-    });
-    // 依面內 (row,col) 排序後放入格子
-    const byFace = {};
-    for (let i = 0; i < 24; i++) { const f = C.faceName(i); (byFace[f] = byFace[f] || []).push(i); }
-    cellNode = [];
-    Object.keys(byFace).forEach(f => {
-      byFace[f].sort((a, b) => { const ca = C.cell(a), cb = C.cell(b); return (ca.row - cb.row) || (ca.col - cb.col); });
-      byFace[f].forEach(i => {
-        const c = document.createElement('div'); c.className = 'cube-cell'; c.dataset.idx = i;
-        c.innerHTML = `<span class="cs"></span><span class="cn"></span>`;
-        faces[f].appendChild(c); cellNode[i] = c;
-      });
-    });
     els.cube.innerHTML = '';
-    ['U', 'D', 'L', 'R', 'F', 'B'].forEach(f => els.cube.appendChild(faces[f]));
+    // 6 個深色背景面板（放在格子內側，營造實心感、擋住穿透）
+    ['U', 'D', 'L', 'R', 'F', 'B'].forEach(f => { const d = document.createElement('div'); d.className = 'cube-face cf-' + f; els.cube.appendChild(d); });
+    cellNode = [];
+    for (let i = 0; i < 24; i++) {
+      const p = C.POS[i];
+      let nA = 0; for (let a = 0; a < 3; a++) if (Math.abs(p[a]) === 1) nA = a;   // 面法向軸
+      const ns = Math.sign(p[nA]);
+      // 讓格子平面貼齊該面、正面朝外（Y 在畫面上是往下，所以渲染時翻 Y）
+      const orient = nA === 0 ? `rotateY(${ns > 0 ? 90 : -90}deg)` : nA === 1 ? `rotateX(${ns > 0 ? 90 : -90}deg)` : (ns > 0 ? '' : 'rotateY(180deg)');
+      const c = document.createElement('div'); c.className = 'cube-cell'; c.dataset.idx = i;
+      c.style.transform = `translate3d(${p[0] * H}px, ${-p[1] * H}px, ${p[2] * H}px) ${orient}`;
+      c.innerHTML = `<span class="cs"></span><span class="cn"></span>`;
+      els.cube.appendChild(c); cellNode[i] = c;
+    }
     applyOrbit();
   }
 
@@ -111,7 +111,8 @@
     const u = [0, 0, 0]; u[others[0]] = 1;
     const v = [0, 0, 0]; v[others[1]] = 1;
     let M; try { const ts = getComputedStyle(els.cube).transform; M = new DOMMatrix(ts === 'none' ? undefined : ts); } catch (e) { return null; }
-    const su = screenDir(M, u), sv = screenDir(M, v);
+    // 投影到螢幕時也要翻 Y（與渲染一致），方向判斷才正確
+    const su = screenDir(M, [u[0], -u[1], u[2]]), sv = screenDir(M, [v[0], -v[1], v[2]]);
     const cand = [
       { d: u, s: su }, { d: u.map(x => -x), s: [-su[0], -su[1]] },
       { d: v, s: sv }, { d: v.map(x => -x), s: [-sv[0], -sv[1]] },
@@ -143,21 +144,14 @@
     for (let k = 0; k < 24; k++) cellNode[k] && cellNode[k].classList.remove('layer-preview');
   }
 
-  // 流暢翻轉動畫：該層格子翻過去（中途換成新內容），不再瞬間跳
+  // 轉動回饋：轉動的那一層格子變色（平滑過渡），轉完恢復原本顏色
   function animateTurn(m) {
     const sp = C.moveSpec(m.name);
     const affected = [];
     for (let k = 0; k < 24; k++) if (Math.sign(C.POS[k][sp.axis]) === sp.layerSign) affected.push(k);
-    const rot = Math.abs(m.sdir[0]) >= Math.abs(m.sdir[1]) ? 'rotateY' : 'rotateX';
-    affected.forEach(k => { const c = cellNode[k]; c.style.transition = 'transform .15s linear'; c.style.transform = `${rot}(78deg)`; });
-    setTimeout(() => {
-      turn(m.name);                                            // 套用排列、更新內容、偵測反應、音效、門得列夫
-      affected.forEach(k => { const c = cellNode[k]; c.style.transition = 'none'; c.style.transform = `${rot}(-78deg)`; });
-      requestAnimationFrame(() => requestAnimationFrame(() => {
-        affected.forEach(k => { const c = cellNode[k]; c.style.transition = 'transform .16s linear'; c.style.transform = ''; });
-      }));
-      setTimeout(() => affected.forEach(k => { cellNode[k].style.transition = ''; }), 230);
-    }, 155);
+    turn(m.name);                                              // 套用排列、更新內容、偵測反應、音效、門得列夫
+    affected.forEach(k => cellNode[k].classList.add('turning'));   // 該層變色
+    setTimeout(() => affected.forEach(k => cellNode[k] && cellNode[k].classList.remove('turning')), 360);  // 恢復原色
   }
 
   function hideHint() { if (els.hintAnim) { els.hintAnim.remove(); els.hintAnim = null; } }

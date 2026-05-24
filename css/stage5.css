@@ -24,33 +24,40 @@
 .cube-scene { position: relative; perspective: 760px; width: 100%; height: 300px; display: flex; align-items: center; justify-content: center; touch-action: none; cursor: grab; user-select: none; }
 .cube-scene.grabbing { cursor: grabbing; }
 .cube3d { position: relative; width: 140px; height: 140px; transform-style: preserve-3d; transition: transform .08s linear; }
+/* 6 個深色背景面板（放在格子內側 66，格子在 70） */
 .cube-face {
-  position: absolute; width: 140px; height: 140px; box-sizing: border-box;
-  display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 5px; padding: 5px;
-  background: rgba(8,4,16,.7); border-radius: 8px;
+  position: absolute; width: 132px; height: 132px; left: 4px; top: 4px; box-sizing: border-box;
+  background: rgba(8,4,16,.92); border-radius: 10px; border: 1px solid rgba(179,136,255,.12);
 }
-.cf-F { transform: translateZ(70px); }
-.cf-B { transform: rotateY(180deg) translateZ(70px); }
-.cf-R { transform: rotateY(90deg) translateZ(70px); }
-.cf-L { transform: rotateY(-90deg) translateZ(70px); }
-.cf-U { transform: rotateX(90deg) translateZ(70px); }
-.cf-D { transform: rotateX(-90deg) translateZ(70px); }
+.cf-F { transform: translateZ(66px); }
+.cf-B { transform: rotateY(180deg) translateZ(66px); }
+.cf-R { transform: rotateY(90deg) translateZ(66px); }
+.cf-L { transform: rotateY(-90deg) translateZ(66px); }
+.cf-U { transform: rotateX(90deg) translateZ(66px); }
+.cf-D { transform: rotateX(-90deg) translateZ(66px); }
 
+/* 格子：用 JS 的 translate3d 直接定位到真正的 3D 位置（幾何精確） */
 .cube-cell {
-  border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  background: linear-gradient(160deg, var(--bg-3), var(--bg-2)); border: 1.5px solid var(--gcol, var(--line));
-  position: relative; overflow: visible;
+  position: absolute; left: 50%; top: 50%; width: 62px; height: 62px; margin: -31px 0 0 -31px;
+  border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: linear-gradient(160deg, var(--bg-3), var(--bg-2)); border: 2px solid var(--gcol, var(--line));
+  backface-visibility: visible; transition: background .2s, border-color .2s, box-shadow .2s;
 }
+/* 轉動時：那一層格子變色，轉完 0.36 秒後恢復原色 */
+.cube-cell.turning {
+  background: linear-gradient(160deg, var(--cyan), #1f7d8a) !important;
+  border-color: var(--cyan); box-shadow: 0 0 20px var(--cyan); z-index: 5;
+}
+.cube-cell.turning .cs { color: #06222a; }
 .cube-cell .cs { font-size: 21px; font-weight: 800; color: var(--gcol, #fff); line-height: 1; text-shadow: 0 0 8px rgba(0,0,0,.6); }
 .cube-cell .cn { font-size: 10px; color: #f0ebff; margin-top: 1px; }
 
 /* 反應中的格子：以危險色發光，依類型加動畫 */
 .cube-cell.reacting { border-color: var(--dcol); box-shadow: 0 0 14px var(--dcol), inset 0 0 12px var(--dcol); z-index: 2; }
 .cube-cell.reacting::after { content: attr(data-ico); position: absolute; top: -8px; right: -6px; font-size: 14px; filter: drop-shadow(0 0 4px #000); }
-.cube-cell.reacting.t-explosion { animation: cell-shake .4s ease-in-out infinite; }
-.cube-cell.reacting:not(.t-explosion) { animation: cell-pulse .7s ease-in-out infinite alternate; }
-@keyframes cell-pulse { from { filter: brightness(1); } to { filter: brightness(1.55); } }
-@keyframes cell-shake { 0%,100% { transform: translate(0,0); } 25% { transform: translate(-2px,1px); } 75% { transform: translate(2px,-1px); } }
+/* 反應中閃爍：只用 filter，避免覆蓋格子的 3D 定位 transform */
+.cube-cell.reacting { animation: cell-pulse .7s ease-in-out infinite alternate; }
+@keyframes cell-pulse { from { filter: brightness(1); } to { filter: brightness(1.6); } }
 
 /* 轉動時整體一閃 */
 .cube3d.turned { animation: cube-flash .25s ease; }
@@ -146,11 +153,6 @@
 
 @media (max-width: 600px) {
   .cube-modes { grid-template-columns: 1fr; }
-  .cube-scene { height: 260px; }
-  .cube3d, .cube-face { width: 120px; height: 120px; }
-  .cf-F,.cf-B,.cf-R,.cf-L,.cf-U,.cf-D { } /* translateZ 調整見下 */
-  .cf-F { transform: translateZ(60px); } .cf-B { transform: rotateY(180deg) translateZ(60px); }
-  .cf-R { transform: rotateY(90deg) translateZ(60px); } .cf-L { transform: rotateY(-90deg) translateZ(60px); }
-  .cf-U { transform: rotateX(90deg) translateZ(60px); } .cf-D { transform: rotateX(-90deg) translateZ(60px); }
+  .cube-scene { height: 270px; }
   .cube-cell .cs { font-size: 18px; }
 }
