@@ -80,5 +80,9 @@
   const MNAMES = Object.keys(MOVES);
   function scramble(place, n) { let p = place.slice(); for (let k = 0; k < n; k++) p = applyMove(p, MNAMES[(Math.random() * MNAMES.length) | 0]); return p; }
 
-  window.CHEM.cube = { POS, FADJ, NB, MOVES, MNAMES, applyMove, faceName, cell, SET24, findSafe, reactions, scramble };
+  // 從轉動名稱反推：轉動軸、哪個半邊（層）、方向
+  const SPEC = { R: [0, 1], L: [0, -1], U: [1, 1], D: [1, -1], F: [2, 1], B: [2, -1] };
+  function moveSpec(name) { const [axis, layerSign] = SPEC[name[0]]; return { axis, layerSign, deg: name.length > 1 ? -90 : 90 }; }
+
+  window.CHEM.cube = { POS, FADJ, NB, MOVES, MNAMES, applyMove, faceName, cell, SET24, findSafe, reactions, scramble, moveSpec };
 })();

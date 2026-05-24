@@ -87,13 +87,18 @@
       orbit.y += (t.clientX - orbit.lx) * 0.5; orbit.x -= (t.clientY - orbit.ly) * 0.5;
       orbit.x = Math.max(-85, Math.min(85, orbit.x)); orbit.lx = t.clientX; orbit.ly = t.clientY;
       applyOrbit(); if (e.cancelable) e.preventDefault();
-    } else if (drag.mode === 'turn' && !drag.committed) {
-      const dx = t.clientX - drag.sx, dy = t.clientY - drag.sy;
-      if (Math.hypot(dx, dy) > 16) { const name = computeMove(drag.idx, dx, dy); if (name) { drag.committed = true; turn(name); } }
+    } else if (drag.mode === 'turn') {
       if (e.cancelable) e.preventDefault();
+      const dx = t.clientX - drag.sx, dy = t.clientY - drag.sy;
+      if (Math.hypot(dx, dy) < 14) { clearPreview(); drag.preview = null; return; }    // 太短：取消預覽
+      const m = computeMove(drag.idx, dx, dy);                                          // 預覽：顯示箭頭 + 高亮該層
+      if (m) { if (!drag.preview || drag.preview.name !== m.name) showPreview(drag.idx, m); drag.preview = m; }
     }
   }
-  function onUp() { drag.mode = null; els.scene && els.scene.classList.remove('grabbing'); }
+  function onUp() {
+    if (drag.mode === 'turn' && drag.preview) { const m = drag.preview; clearPreview(); drag.preview = null; animateTurn(m); }   // 放開才轉
+    drag.mode = null; els.scene && els.scene.classList.remove('grabbing');
+  }
 
   // 拖曳格子 → 算出該轉哪一層、哪個方向（用瀏覽器真實 3D 矩陣換算螢幕方向）
   const cross = (a, b) => [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
@@ -117,7 +122,42 @@
     let ax = 0; for (let a = 0; a < 3; a++) if (Math.abs(r[a]) > 0.5) ax = a;
     const rSign = Math.sign(r[ax]), ls = Math.sign(p[ax]);                          // 轉哪個半邊由該格座標決定
     const base = ax === 0 ? (ls > 0 ? 'R' : 'L') : ax === 1 ? (ls > 0 ? 'U' : 'D') : (ls > 0 ? 'F' : 'B');
-    return rSign > 0 ? base : base + "'";
+    return { name: rSign > 0 ? base : base + "'", sdir: best.s };                    // sdir：該層在螢幕上移動的方向
+  }
+
+  // 拖曳時：顯示方向箭頭 + 高亮即將轉動的那一層
+  function showPreview(idx, m) {
+    clearPreview();
+    const sp = C.moveSpec(m.name);
+    for (let k = 0; k < 24; k++) if (Math.sign(C.POS[k][sp.axis]) === sp.layerSign) cellNode[k].classList.add('layer-preview');
+    if (!els.arrow) { els.arrow = document.createElement('div'); els.arrow.className = 'turn-arrow'; els.arrow.textContent = '➜'; els.scene.appendChild(els.arrow); }
+    const r = cellNode[idx].getBoundingClientRect(), sr = els.scene.getBoundingClientRect();
+    const ang = Math.atan2(m.sdir[1], m.sdir[0]) * 180 / Math.PI;
+    els.arrow.style.left = (r.left + r.width / 2 - sr.left) + 'px';
+    els.arrow.style.top = (r.top + r.height / 2 - sr.top) + 'px';
+    els.arrow.style.transform = `translate(-50%,-50%) rotate(${ang}deg)`;
+    els.arrow.classList.add('show');
+  }
+  function clearPreview() {
+    if (els.arrow) els.arrow.classList.remove('show');
+    for (let k = 0; k < 24; k++) cellNode[k] && cellNode[k].classList.remove('layer-preview');
+  }
+
+  // 流暢翻轉動畫：該層格子翻過去（中途換成新內容），不再瞬間跳
+  function animateTurn(m) {
+    const sp = C.moveSpec(m.name);
+    const affected = [];
+    for (let k = 0; k < 24; k++) if (Math.sign(C.POS[k][sp.axis]) === sp.layerSign) affected.push(k);
+    const rot = Math.abs(m.sdir[0]) >= Math.abs(m.sdir[1]) ? 'rotateY' : 'rotateX';
+    affected.forEach(k => { const c = cellNode[k]; c.style.transition = 'transform .15s linear'; c.style.transform = `${rot}(78deg)`; });
+    setTimeout(() => {
+      turn(m.name);                                            // 套用排列、更新內容、偵測反應、音效、門得列夫
+      affected.forEach(k => { const c = cellNode[k]; c.style.transition = 'none'; c.style.transform = `${rot}(-78deg)`; });
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        affected.forEach(k => { const c = cellNode[k]; c.style.transition = 'transform .16s linear'; c.style.transform = ''; });
+      }));
+      setTimeout(() => affected.forEach(k => { cellNode[k].style.transition = ''; }), 230);
+    }, 155);
   }
 
   function hideHint() { if (els.hintAnim) { els.hintAnim.remove(); els.hintAnim = null; } }
@@ -253,6 +293,20 @@
         <div class="cube-hint-anim" id="c-hintanim"><span class="swipe-dot">👆</span><span class="swipe-label">拖曳格子來旋轉</span></div>
       </div>
       <p class="cube-hint">✋ 直接<b>拖曳方塊上的格子</b>就能旋轉那一層（手機用手指滑）；拖空白處可轉動視角。</p>
+      <div class="cube-legend">
+        <svg viewBox="0 0 120 120" width="88" height="88" aria-hidden="true">
+          <rect class="lg-sq" x="18" y="18" width="38" height="38" rx="5"/><rect class="lg-sq" x="64" y="18" width="38" height="38" rx="5"/>
+          <rect class="lg-sq" x="18" y="64" width="38" height="38" rx="5"/><rect class="lg-sq" x="64" y="64" width="38" height="38" rx="5"/>
+          <path class="lg-h" d="M24 37 H96"/><path class="lg-h" d="M90 30 L100 37 L90 44 Z" fill="currentColor"/>
+          <path class="lg-v" d="M37 24 V96"/><path class="lg-v" d="M30 90 L37 100 L44 90 Z" fill="currentColor"/>
+        </svg>
+        <div class="lg-text">
+          <div class="lg-title">怎麼轉？</div>
+          <div><span class="lg-dot h"></span>橫向拖 → 那一<b>橫排</b>左右轉</div>
+          <div><span class="lg-dot v"></span>直向拖 → 那一<b>直排</b>上下轉</div>
+          <div class="lg-note">拖曳時會出現箭頭並高亮該層，放開即旋轉。</div>
+        </div>
+      </div>
       <details class="cube-ctrl-fold"><summary>或用按鈕轉動 ▾</summary>${controlsHTML()}</details>
       <div class="cube-win-slot"></div>
       <div class="cube-react"></div>`;
@@ -263,6 +317,7 @@
     els.cur = els.stage.querySelector('#c-cur'); els.tot = els.stage.querySelector('#c-tot');
     els.time = els.stage.querySelector('#c-time'); els.stepN = els.stage.querySelector('#c-step'); els.remain = els.stage.querySelector('#c-remain');
     els.hintAnim = els.stage.querySelector('#c-hintanim');
+    els.arrow = null;                                  // 上一局的箭頭已隨 scene 重建移除
     els.stage.querySelector('#c-mode').onclick = showModes;
     els.stage.querySelectorAll('.turn-btn').forEach(b => b.onclick = () => turn(b.dataset.mv));
 

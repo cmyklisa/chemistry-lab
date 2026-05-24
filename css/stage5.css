@@ -88,6 +88,36 @@
 }
 .cube-hint-anim .swipe-label { background: var(--bg-2); border: 1px solid var(--magic); border-radius: 999px; padding: 7px 16px; font-size: 15px; font-weight: 700; box-shadow: var(--glow); white-space: nowrap; }
 
+/* 拖曳預覽：即將轉動的那一層高亮 */
+.cube-cell.layer-preview { border-color: var(--gold); box-shadow: 0 0 16px var(--gold), inset 0 0 14px -4px var(--gold); z-index: 3; }
+
+/* 拖曳方向箭頭 */
+.turn-arrow {
+  position: absolute; z-index: 7; color: var(--gold); font-size: 30px; font-weight: 900;
+  text-shadow: 0 0 10px var(--gold), 0 0 4px #000; pointer-events: none;
+  opacity: 0; transition: opacity .12s;
+}
+.turn-arrow.show { opacity: 1; animation: arrow-bob .7s ease-in-out infinite; }
+@keyframes arrow-bob { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.4); } }
+
+/* 旁邊的示意圖 */
+.cube-legend {
+  display: flex; align-items: center; gap: 16px; max-width: 460px; margin: 0 auto 12px;
+  padding: 12px 16px; border: 1px solid var(--line); border-radius: var(--radius-sm);
+  background: linear-gradient(160deg, var(--bg-2), var(--bg-1));
+}
+.cube-legend svg { flex-shrink: 0; }
+.cube-legend .lg-sq { fill: var(--bg-3); stroke: var(--magic); stroke-width: 2; }
+.cube-legend .lg-h { stroke: var(--cyan); color: var(--cyan); stroke-width: 4; fill: none; stroke-linecap: round; }
+.cube-legend .lg-v { stroke: var(--pink); color: var(--pink); stroke-width: 4; fill: none; stroke-linecap: round; }
+.cube-legend .lg-text { font-size: 14px; color: var(--txt-dim); line-height: 1.7; }
+.cube-legend .lg-title { font-size: 16px; font-weight: 800; color: var(--txt); margin-bottom: 4px; }
+.cube-legend .lg-text b { color: var(--txt); }
+.cube-legend .lg-note { font-size: 12px; color: var(--txt-faint); margin-top: 4px; }
+.cube-legend .lg-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+.cube-legend .lg-dot.h { background: var(--cyan); }
+.cube-legend .lg-dot.v { background: var(--pink); }
+
 /* 轉動按鈕收進可折疊區（次要） */
 .cube-ctrl-fold { text-align: center; margin: 2px 0 10px; }
 .cube-ctrl-fold > summary { cursor: pointer; color: var(--txt-dim); font-size: 14px; list-style: none; display: inline-block; padding: 4px 12px; border: 1px solid var(--line); border-radius: 999px; }
