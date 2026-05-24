@@ -1,0 +1,94 @@
+/* =====================================================================
+   第四階段：對戰卡牌（雙人同機）— 樣式
+   計分板、換手交接、手牌、場上牌、結算、勝負
+   ===================================================================== */
+
+/* --- 計分板 --- */
+.b-scoreboard { display: flex; gap: 12px; margin: 14px 0 6px; }
+.b-player {
+  flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 12px 16px; border-radius: var(--radius-sm);
+  background: linear-gradient(160deg, var(--bg-2), var(--bg-1)); border: 1px solid var(--line);
+}
+.b-player.turn { border-color: var(--gold); box-shadow: 0 0 16px rgba(255,209,102,.4); }
+.b-player .pname { font-weight: 800; font-size: 16px; }
+.b-player.turn .pname { color: var(--gold); }
+.b-player .pcount { font-size: 15px; color: var(--txt-dim); }
+.b-player .pcount b { color: var(--cyan); font-size: 19px; font-variant-numeric: tabular-nums; }
+
+/* --- 舞台 --- */
+#b-stage { position: relative; min-height: 320px; }
+.b-instr { text-align: center; font-size: 17px; color: var(--txt); margin: 16px 0; }
+.b-instr b { color: var(--gold); }
+
+/* --- 換手交接畫面 --- */
+.b-handoff {
+  text-align: center; padding: 40px 20px;
+  border: 1px solid var(--line); border-radius: var(--radius);
+  background: radial-gradient(circle at 50% 0%, rgba(124,92,255,.14), transparent 70%), var(--bg-1);
+}
+.b-handoff .hb-ico { font-size: 46px; }
+.b-handoff h3 { font-size: 24px; margin: 10px 0; }
+.b-handoff p { color: var(--txt-dim); font-size: 16px; margin-bottom: 20px; }
+.mode-choices { display: flex; flex-direction: column; gap: 12px; max-width: 320px; margin: 0 auto; }
+.mode-choices .btn { width: 100%; }
+
+/* --- 卡牌 --- */
+.b-hand { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.b-cardbtn { background: none; border: none; padding: 0; cursor: pointer; transition: transform .15s; }
+.b-cardbtn:hover { transform: translateY(-6px); }
+.b-card {
+  width: 92px; height: 128px; border-radius: 12px; padding: 8px;
+  display: flex; flex-direction: column; align-items: center;
+  background: linear-gradient(160deg, var(--bg-3), var(--bg-2)); border: 2px solid var(--gcol, var(--line));
+  box-shadow: 0 4px 12px rgba(0,0,0,.4); position: relative; overflow: hidden;
+}
+.b-card::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 50% 0%, var(--gcol), transparent 70%); opacity: .16; }
+.b-card .bc-top { width: 100%; display: flex; justify-content: space-between; font-size: 12px; color: var(--txt-dim); }
+.b-card .bc-sym { font-size: 34px; font-weight: 800; color: var(--gcol); margin: auto 0 2px; text-shadow: 0 0 12px rgba(0,0,0,.5); }
+.b-card .bc-name { font-size: 17px; font-weight: 700; color: #f4f0ff; }
+.b-card .bc-grp { font-size: 11px; color: var(--txt-dim); margin-top: 2px; }
+
+.b-card.back { background: linear-gradient(150deg, #2a1742, #170c28); border-color: var(--line); align-items: center; justify-content: center; }
+.b-card.back .rune { font-size: 30px; color: var(--magic); filter: drop-shadow(0 0 8px rgba(179,136,255,.6)); }
+.b-card.big { width: 116px; height: 162px; }
+.b-card.big .bc-sym { font-size: 44px; }
+
+/* --- 場上牌 --- */
+.b-fieldwrap { text-align: center; margin: 12px 0; }
+.b-fieldlabel { font-size: 14px; color: var(--txt-dim); margin-bottom: 8px; }
+.b-field-inner { display: inline-flex; justify-content: center; filter: drop-shadow(0 0 18px rgba(179,136,255,.5)); }
+
+/* --- 結算畫面 --- */
+.b-resolve { }
+.b-versus { display: flex; align-items: center; justify-content: center; gap: 18px; flex-wrap: wrap; margin: 8px 0 14px; }
+.b-versus .vs-mid { font-size: 32px; }
+.b-outcome { text-align: center; font-size: 22px; font-weight: 800; margin: 6px 0 14px; }
+.b-outcome.boom { color: var(--danger); }
+.b-outcome.safe { color: var(--cyan); }
+.b-card.destroyed { animation: card-boom .6s ease forwards; }
+@keyframes card-boom { 0% { transform: scale(1); } 40% { transform: scale(1.12) rotate(3deg); filter: brightness(2); } 100% { transform: scale(.2) rotate(-12deg); opacity: 0; } }
+
+.b-explain { margin-top: 10px; padding: 14px 16px; border-radius: var(--radius-sm); background: rgba(179,136,255,.06); border: 1px solid var(--line); }
+.b-explain .et { font-size: 16px; font-weight: 800; color: var(--gold); margin-bottom: 8px; }
+.b-explain h4 { font-size: 14px; color: var(--cyan); margin: 10px 0 4px; }
+.b-explain p { font-size: 15.5px; color: var(--txt); line-height: 1.6; }
+.b-center { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-top: 18px; }
+
+/* --- 勝負畫面 --- */
+.b-gameover {
+  text-align: center; padding: 36px 20px;
+  border: 1px solid var(--gold); border-radius: var(--radius);
+  background: radial-gradient(circle at 50% 0%, rgba(255,209,102,.14), transparent 70%), var(--bg-1);
+}
+.b-gameover .go-ico { font-size: 52px; }
+.b-gameover h3 { font-size: 28px; color: var(--gold); margin: 8px 0; }
+.b-gameover p { color: var(--txt-dim); font-size: 17px; margin-bottom: 18px; }
+
+@media (max-width: 600px) {
+  .b-scoreboard { flex-direction: column; gap: 8px; }
+  .b-card { width: 76px; height: 108px; }
+  .b-card .bc-sym { font-size: 28px; }
+  .b-card .bc-name { font-size: 15px; }
+  .b-card.big { width: 100px; height: 142px; }
+}

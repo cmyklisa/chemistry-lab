@@ -1,0 +1,140 @@
+/* =====================================================================
+   第一階段：認識元素 — 樣式
+   原子教學動畫 / 波耳模型 / 元素性格卡 / 分族介紹
+   ===================================================================== */
+
+/* --- 波耳模型（電子軌道動畫，可重用） --- */
+.bohr { position: relative; margin: 0 auto; }
+.bohr .nucleus {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  border-radius: 50%; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; color: #0a0612; font-weight: 800;
+  background: radial-gradient(circle at 35% 30%, #fff, var(--gcol, #b388ff));
+  box-shadow: 0 0 22px var(--gcol, #b388ff); z-index: 3;
+}
+.bohr .nucleus .sym { line-height: 1; }
+.bohr .nucleus .z { font-size: 10px; opacity: .8; font-weight: 700; }
+.bohr .ring {
+  position: absolute; top: 50%; left: 50%; border-radius: 50%;
+  border: 1px solid rgba(179,136,255,0.28); transform: translate(-50%, -50%);
+  animation: spin var(--dur, 8s) linear infinite;
+}
+.bohr .electron {
+  position: absolute; top: 50%; left: 50%; width: 10px; height: 10px;
+  border-radius: 50%; background: var(--cyan);
+  box-shadow: 0 0 8px var(--cyan); margin: -5px 0 0 -5px;
+}
+@keyframes spin { from { transform: translate(-50%,-50%) rotate(0); } to { transform: translate(-50%,-50%) rotate(360deg); } }
+
+/* --- 教學分頁 --- */
+.lesson { display: grid; grid-template-columns: 280px 1fr; gap: 24px; align-items: center; }
+.lesson .stage-vis { display: flex; align-items: center; justify-content: center; min-height: 260px; }
+.lesson h3 { font-size: 25px; margin-bottom: 12px; color: var(--gold); }
+.lesson p { color: var(--txt-dim); margin-bottom: 10px; font-size: 17px; line-height: 1.75; }
+.lesson .hl { color: var(--cyan); font-weight: 700; }
+.lesson-nav { display: flex; gap: 10px; align-items: center; margin-top: 18px; }
+.lesson-dots { display: flex; gap: 6px; margin: 0 6px; }
+.lesson-dots span { width: 9px; height: 9px; border-radius: 50%; background: var(--bg-3); transition: .2s; }
+.lesson-dots span.on { background: var(--magic); box-shadow: var(--glow); }
+
+/* 電子轉移示意（為什麼會反應） */
+.transfer { display: flex; align-items: center; gap: 10px; }
+.transfer .atom-mini { text-align: center; }
+.transfer .arrow { font-size: 26px; color: var(--gold); animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 0%,100% { opacity:.4; transform: translateX(0);} 50% { opacity:1; transform: translateX(4px);} }
+
+/* --- 元素卡片網格 --- */
+.filter-bar { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0; }
+.chip {
+  cursor: pointer; font-size: 15px; padding: 7px 14px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--bg-2); color: var(--txt-dim); transition: .2s;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.chip .dot { width: 9px; height: 9px; border-radius: 50%; }
+.chip:hover { color: var(--txt); }
+.chip.active { color: #0a0612; background: var(--txt); font-weight: 700; }
+
+.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
+
+/* 翻牌卡：正面元素符號，hover/點擊看性格 */
+.el-card {
+  position: relative; aspect-ratio: 3 / 4; cursor: pointer;
+  perspective: 800px; background: none; border: none; padding: 0;
+}
+.el-card .inner {
+  position: relative; width: 100%; height: 100%; transition: transform .6s;
+  transform-style: preserve-3d;
+}
+.el-card.flipped .inner { transform: rotateY(180deg); }
+.el-card .front, .el-card .back {
+  position: absolute; inset: 0; backface-visibility: hidden;
+  border-radius: var(--radius); border: 1px solid var(--gcol, var(--line));
+  padding: 12px; display: flex; flex-direction: column;
+  background: linear-gradient(160deg, var(--bg-2), var(--bg-1)); overflow: hidden;
+}
+.el-card .front { box-shadow: inset 0 0 30px rgba(0,0,0,0.4); }
+.el-card .front::before {
+  content: ""; position: absolute; inset: 0;
+  background: radial-gradient(circle at 50% 0%, var(--gcol), transparent 70%); opacity: .18;
+}
+.el-card .z-top { display: flex; justify-content: space-between; font-size: 14px; color: var(--txt-dim); }
+.el-card .big-sym { font-size: 46px; font-weight: 800; margin: auto 0 4px; text-align: center; color: var(--gcol, var(--txt)); text-shadow: 0 0 14px var(--gcol); }
+.el-card .cn { text-align: center; font-size: 19px; font-weight: 700; }
+.el-card .grp-tag { text-align: center; font-size: 13px; color: var(--txt-dim); margin-top: 4px; }
+.el-card .back { transform: rotateY(180deg); }
+.el-card .back .ptitle { font-size: 16px; color: var(--gcol); font-weight: 700; }
+.el-card .back .ptext { font-size: 14px; color: var(--txt-dim); margin-top: 5px; line-height: 1.55; }
+.el-card .back .flip-hint { margin-top: auto; font-size: 13px; color: var(--txt-faint); text-align: center; }
+
+/* --- 元素詳情彈窗 --- */
+.modal-mask {
+  position: fixed; inset: 0; background: rgba(5,2,12,0.78); z-index: 80;
+  display: flex; align-items: center; justify-content: center; padding: 18px;
+  opacity: 0; pointer-events: none; transition: .25s; backdrop-filter: blur(4px);
+}
+.modal-mask.show { opacity: 1; pointer-events: auto; }
+.modal {
+  width: min(560px, 100%); max-height: 88vh; overflow: auto;
+  background: linear-gradient(160deg, var(--bg-2), var(--bg-1));
+  border: 1px solid var(--gcol, var(--magic)); border-radius: var(--radius);
+  padding: 24px; box-shadow: 0 0 40px rgba(0,0,0,0.6), 0 0 30px var(--gcol);
+  transform: scale(.92); transition: .25s;
+}
+.modal-mask.show .modal { transform: scale(1); }
+.modal .close { float: right; cursor: pointer; color: var(--txt-dim); font-size: 22px; line-height: 1; }
+.modal .m-head { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
+.modal .m-sym { font-size: 48px; font-weight: 800; color: var(--gcol); text-shadow: 0 0 16px var(--gcol); }
+.modal .m-name { font-size: 27px; font-weight: 800; }
+.modal .m-meta { color: var(--txt-dim); font-size: 16px; }
+.modal .m-bohr { display: flex; justify-content: center; margin: 16px 0; }
+.modal .m-row { display: flex; gap: 10px; padding: 11px 0; border-top: 1px solid var(--line); font-size: 16px; }
+.modal .m-row b { color: var(--gold); min-width: 84px; display: inline-block; }
+.modal .persona {
+  margin-top: 14px; padding: 13px 15px; border-radius: var(--radius-sm);
+  background: rgba(179,136,255,0.08); border: 1px solid var(--line); font-size: 16px;
+}
+.modal .persona .tag { font-weight: 800; color: var(--gcol); }
+
+/* --- 分族頁 --- */
+.group-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+.group-block {
+  border-radius: var(--radius); padding: 18px; border: 1px solid var(--gcol);
+  background: linear-gradient(160deg, var(--bg-2), var(--bg-1)); position: relative; overflow: hidden;
+}
+.group-block::before { content:""; position:absolute; inset:0; background: radial-gradient(circle at 100% 0%, var(--gcol), transparent 60%); opacity:.12; }
+.group-block h3 { font-size: 21px; color: var(--gcol); }
+.group-block .persona-tag { display: inline-block; font-size: 14px; margin: 7px 0; padding: 3px 11px; border-radius: 999px; background: var(--gcol); color: #0a0612; font-weight: 700; }
+.group-block p { font-size: 15px; color: var(--txt-dim); }
+.group-block .tagline { font-style: italic; color: var(--txt); margin-top: 8px; font-size: 15px; }
+.group-block .members { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.group-block .members .m {
+  width: 38px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 16px; background: var(--bg-0); border: 1px solid var(--gcol); cursor: pointer;
+}
+.group-block .members .m:hover { background: var(--gcol); color: #0a0612; }
+
+@media (max-width: 600px) {
+  .lesson { grid-template-columns: 1fr; }
+  .lesson .stage-vis { min-height: 220px; }
+  .card-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+}

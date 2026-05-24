@@ -1,0 +1,215 @@
+/* =====================================================================
+   暗色魔法風格主題 — chemistry-lab
+   全域變數、重置、共用元件、RWD
+   ===================================================================== */
+
+:root {
+  /* 背景 */
+  --bg-0: #0a0612;          /* 最深層 */
+  --bg-1: #14091f;          /* 卡片底 */
+  --bg-2: #1d0f2e;          /* 浮層 */
+  --bg-3: #2a1742;          /* hover */
+
+  /* 魔法色 */
+  --magic:    #b388ff;      /* 主魔法紫 */
+  --magic-2:  #7c5cff;      /* 深紫 */
+  --gold:     #ffd166;      /* 金 */
+  --cyan:     #4dd0e1;      /* 青 */
+  --pink:     #f15bb5;      /* 粉 */
+  --danger:   #ff5a5f;      /* 危險紅 */
+
+  /* 文字 */
+  --txt:      #ece4ff;
+  --txt-dim:  #a99cc4;
+  --txt-faint:#6f6388;
+
+  /* 線條 / 光暈 */
+  --line: rgba(179,136,255,0.18);
+  --glow: 0 0 18px rgba(179,136,255,0.45);
+  --glow-gold: 0 0 18px rgba(255,209,102,0.5);
+
+  --radius: 16px;
+  --radius-sm: 10px;
+  --ff: "Segoe UI", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body { height: 100%; }
+
+body {
+  font-family: var(--ff);
+  color: var(--txt);
+  background:
+    radial-gradient(900px 600px at 15% -10%, rgba(124,92,255,0.18), transparent 60%),
+    radial-gradient(800px 600px at 100% 0%, rgba(241,91,181,0.12), transparent 55%),
+    radial-gradient(700px 700px at 50% 120%, rgba(77,208,225,0.10), transparent 60%),
+    var(--bg-0);
+  min-height: 100vh;
+  overflow-x: hidden;
+  line-height: 1.65;
+  font-size: 17px;
+}
+
+/* 飄浮的魔法星塵背景 */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(1.5px 1.5px at 20% 30%, rgba(255,255,255,0.5), transparent),
+    radial-gradient(1.5px 1.5px at 70% 60%, rgba(179,136,255,0.6), transparent),
+    radial-gradient(1px 1px at 40% 80%, rgba(255,209,102,0.5), transparent),
+    radial-gradient(1px 1px at 85% 25%, rgba(77,208,225,0.5), transparent),
+    radial-gradient(1.5px 1.5px at 55% 15%, rgba(255,255,255,0.4), transparent);
+  background-size: 600px 600px, 500px 500px, 400px 400px, 700px 700px, 550px 550px;
+  animation: drift 60s linear infinite;
+  z-index: 0;
+}
+@keyframes drift {
+  from { background-position: 0 0, 0 0, 0 0, 0 0, 0 0; }
+  to   { background-position: 600px 300px, -500px 400px, 400px -300px, -700px 200px, 550px -400px; }
+}
+
+/* --- 版面容器 --- */
+.wrap { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 24px 20px 120px; }
+
+/* --- 頂部標題列 --- */
+.topbar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 8px; }
+.brand {
+  font-size: clamp(22px, 4vw, 34px);
+  font-weight: 800;
+  letter-spacing: 1px;
+  background: linear-gradient(90deg, var(--magic), var(--cyan), var(--gold));
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 14px rgba(179,136,255,0.4));
+}
+.brand .rune { -webkit-text-fill-color: var(--gold); }
+.subtitle { color: var(--txt-dim); font-size: 16px; width: 100%; }
+
+/* --- 麵包屑 / 返回 --- */
+.crumb { display: flex; align-items: center; gap: 10px; margin: 18px 0; color: var(--txt-dim); font-size: 16px; }
+.btn-back {
+  background: var(--bg-2); border: 1px solid var(--line); color: var(--txt);
+  padding: 9px 16px; border-radius: 999px; cursor: pointer; font-size: 16px;
+  transition: .2s;
+}
+.btn-back:hover { background: var(--bg-3); box-shadow: var(--glow); }
+
+/* --- 通用按鈕 --- */
+.btn {
+  font-family: var(--ff); font-size: 17px; cursor: pointer; color: var(--txt);
+  background: linear-gradient(180deg, var(--bg-3), var(--bg-2));
+  border: 1px solid var(--line); border-radius: var(--radius-sm);
+  padding: 13px 20px; transition: .2s; font-weight: 600;
+}
+.btn:hover { box-shadow: var(--glow); border-color: var(--magic); transform: translateY(-1px); }
+.btn.primary { background: linear-gradient(135deg, var(--magic-2), var(--magic)); border: none; }
+.btn.primary:hover { box-shadow: 0 0 26px rgba(179,136,255,0.7); }
+.btn.ghost { background: transparent; }
+
+/* --- 階段選單（首頁）--- */
+.stage-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px; margin-top: 24px; }
+.stage-card {
+  position: relative; text-align: left; cursor: pointer;
+  background: linear-gradient(160deg, var(--bg-2), var(--bg-1));
+  border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 22px; overflow: hidden; transition: .25s;
+}
+.stage-card:hover { transform: translateY(-4px); box-shadow: var(--glow); border-color: var(--magic); }
+.stage-card .num {
+  font-size: 14px; font-weight: 700; color: var(--bg-0);
+  background: var(--gold); padding: 4px 11px; border-radius: 999px; display: inline-block;
+}
+.stage-card h3 { margin: 14px 0 8px; font-size: 23px; }
+.stage-card p { color: var(--txt-dim); font-size: 16px; }
+.stage-card .ico { font-size: 34px; position: absolute; top: 18px; right: 18px; opacity: .9; }
+.stage-card.locked { opacity: .55; }
+.stage-card.locked::after {
+  content: "即將推出"; position: absolute; top: 14px; right: 14px;
+  font-size: 13px; color: var(--txt-faint); border: 1px solid var(--line);
+  padding: 3px 9px; border-radius: 999px;
+}
+
+/* --- 區塊標題 --- */
+.section-title { font-size: clamp(23px, 3.2vw, 31px); margin: 30px 0 6px; font-weight: 800; }
+.section-sub { color: var(--txt-dim); margin-bottom: 18px; font-size: 16px; }
+
+/* --- 通用面板 --- */
+.panel {
+  background: linear-gradient(160deg, var(--bg-2), var(--bg-1));
+  border: 1px solid var(--line); border-radius: var(--radius); padding: 22px;
+}
+
+/* --- 分頁切換 tabs --- */
+.tabs { display: flex; gap: 8px; flex-wrap: wrap; margin: 18px 0; }
+.tab {
+  cursor: pointer; padding: 10px 18px; border-radius: 999px; font-size: 16px; font-weight: 600;
+  background: var(--bg-2); border: 1px solid var(--line); color: var(--txt-dim); transition: .2s;
+}
+.tab:hover { color: var(--txt); }
+.tab.active { color: var(--bg-0); background: linear-gradient(135deg, var(--magic), var(--cyan)); border-color: transparent; }
+
+/* --- 工具：隱藏 --- */
+.hidden { display: none !important; }
+
+/* --- 捲動條 --- */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: var(--bg-3); border-radius: 999px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* --- RWD --- */
+@media (max-width: 600px) {
+  .wrap { padding: 18px 14px 130px; }
+  .stage-grid { grid-template-columns: 1fr; }
+}
+
+/* ===================== 進場畫面 ===================== */
+body.on-intro .topbar { display: none; }
+.intro { display: flex; align-items: center; justify-content: center; min-height: 66vh; text-align: center; }
+.intro-card { max-width: 640px; padding: 20px; }
+.intro-badge {
+  display: inline-block; letter-spacing: 4px; font-size: 13px; color: var(--gold);
+  border: 1px solid var(--line); padding: 5px 14px; border-radius: 999px;
+  background: rgba(255,209,102,.06); margin-bottom: 18px; animation: fadeup .6s .05s both;
+}
+.intro-title {
+  font-size: clamp(38px, 8vw, 72px); font-weight: 900; letter-spacing: 3px; line-height: 1.05;
+  background: linear-gradient(90deg, var(--magic), var(--cyan), var(--gold), var(--magic));
+  background-size: 220% auto; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 26px rgba(179,136,255,.45));
+  animation: shimmer 7s linear infinite, fadeup .6s .12s both;
+}
+.intro-tag { letter-spacing: 8px; color: var(--cyan); font-size: 15px; margin-top: 8px; animation: fadeup .6s .2s both; }
+.intro-desc { color: var(--txt-dim); font-size: 17px; line-height: 1.85; margin: 20px 0 28px; animation: fadeup .6s .3s both; }
+.intro-start { animation: fadeup .6s .42s both, pulse-glow 2.6s 1s infinite; }
+@keyframes shimmer { to { background-position: 220% center; } }
+@keyframes fadeup { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+@keyframes pulse-glow { 0%,100% { box-shadow: 0 0 22px rgba(179,136,255,.5); } 50% { box-shadow: 0 0 34px rgba(179,136,255,.9); } }
+
+/* ===================== 過場動畫 ===================== */
+.view-in { animation: viewIn .42s cubic-bezier(.2,.8,.2,1); }
+@keyframes viewIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+
+/* ===================== 統一質感 ===================== */
+.btn.big { font-size: 19px; padding: 15px 32px; border-radius: 14px; }
+.btn:active { transform: translateY(1px); }
+.panel, .stage-card { box-shadow: 0 10px 30px rgba(0,0,0,.4); }
+
+/* ===================== 音效開關（右上角） ===================== */
+.sfx-toggle {
+  position: fixed; top: 14px; right: 16px; z-index: 90;
+  width: 46px; height: 46px; border-radius: 50%;
+  border: 1px solid var(--line); background: var(--bg-2); color: var(--txt);
+  font-size: 20px; cursor: pointer; transition: .2s; box-shadow: 0 4px 14px rgba(0,0,0,.45);
+  display: flex; align-items: center; justify-content: center;
+}
+.sfx-toggle:hover { border-color: var(--magic); box-shadow: var(--glow); transform: translateY(-1px); }
+.sfx-toggle.off { opacity: .6; }
+
+/* 尊重「減少動態」偏好 */
+@media (prefers-reduced-motion: reduce) {
+  *, body::before { animation: none !important; transition: none !important; }
+}

@@ -1,0 +1,137 @@
+/* =====================================================================
+   像素門得列夫 → SVG 插畫版
+   簡約動漫 / Q 版：圓滑線條、動漫大眼、亂蓬白髮、濃密大鬍子、實驗室白袍。
+   行為（走動、拍手、搖頭、燈泡、撒花）保留，改用 SVG 動畫重做。
+   JS 仍只切換 #mendeleev 上的 class，視覺全在這裡。
+   ===================================================================== */
+
+#mendeleev {
+  position: fixed;
+  bottom: 6px;
+  left: 24px;
+  width: 88px;
+  height: 138px;
+  z-index: 60;
+  pointer-events: none;
+  filter: drop-shadow(0 6px 9px rgba(0,0,0,0.5));
+}
+#mendeleev.face-left .men-body { transform: scaleX(-1); }
+
+.men-body { position: absolute; inset: 0; }
+
+/* 登場動畫：從左邊滑進來 */
+#mendeleev.men-in { animation: men-enter 1.1s cubic-bezier(.2,.85,.25,1); }
+@keyframes men-enter { 0% { transform: translateX(-170px) scale(.75); opacity: 0; } 100% { transform: translateX(0) scale(1); opacity: 1; } }
+.men-svg { width: 100%; height: 100%; overflow: visible; display: block; }
+
+/* 整體踱步彈跳 */
+#mendeleev.walking .men-body { animation: men-bob .5s ease-in-out infinite; }
+@keyframes men-bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+#mendeleev.face-left.walking .men-body { animation: men-bob-l .5s ease-in-out infinite; }
+@keyframes men-bob-l { 0%,100% { transform: scaleX(-1) translateY(0); } 50% { transform: scaleX(-1) translateY(-3px); } }
+
+/* 讓 SVG 各部位的 transform-origin 以自身範圍為準 */
+.men-leg, .men-arm, .men-eye { transform-box: fill-box; }
+.men-leg { transform-origin: 50% 0%; }   /* 髖關節 */
+.men-arm { transform-origin: 50% 6%; }   /* 肩關節 */
+.men-eye { transform-origin: 50% 50%; }
+
+/* 眨眼 */
+#mendeleev .men-eye { animation: blink 4.5s infinite; }
+@keyframes blink { 0%,93%,100% { transform: scaleY(1); } 96% { transform: scaleY(0.12); } }
+
+/* 走路：雙腳交替擺動 */
+#mendeleev.walking .men-leg.l { animation: step1 .5s steps(2,jump-none) infinite; }
+#mendeleev.walking .men-leg.r { animation: step2 .5s steps(2,jump-none) infinite; }
+@keyframes step1 { 0%,100% { transform: rotate(13deg); } 50% { transform: rotate(-13deg); } }
+@keyframes step2 { 0%,100% { transform: rotate(-13deg); } 50% { transform: rotate(13deg); } }
+
+/* 行為：拍手 */
+#mendeleev.clapping .men-arm.l { animation: clap-l .24s ease-in-out infinite; }
+#mendeleev.clapping .men-arm.r { animation: clap-r .24s ease-in-out infinite; }
+@keyframes clap-l { 0%,100% { transform: rotate(-38deg); } 50% { transform: rotate(-68deg); } }
+@keyframes clap-r { 0%,100% { transform: rotate(38deg); }  50% { transform: rotate(68deg); } }
+
+/* 行為：搖頭（頭、髮、鬍子一起左右搖） */
+#mendeleev.shaking .men-head,
+#mendeleev.shaking .men-hair,
+#mendeleev.shaking .men-beard { animation: shake-head .3s ease-in-out 3; }
+@keyframes shake-head { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+
+/* 行為：跳起來慶祝（撒花由 JS 產生） */
+#mendeleev.celebrate .men-body { animation: men-jump .55s ease-out 3; }
+@keyframes men-jump { 0% { transform: translateY(0); } 30% { transform: translateY(-30px) rotate(-3deg); } 65% { transform: translateY(0) rotate(2deg); } 100% { transform: translateY(0); } }
+#mendeleev.celebrate .men-arm.l { transform: rotate(-150deg); }
+#mendeleev.celebrate .men-arm.r { transform: rotate(150deg); }
+
+/* 行為：點頭（看到安全反應） */
+#mendeleev.nodding .men-head,
+#mendeleev.nodding .men-hair,
+#mendeleev.nodding .men-beard { animation: nod .34s ease-in-out 3; }
+@keyframes nod { 0%,100% { transform: translateY(0); } 50% { transform: translateY(4px); } }
+
+/* 行為：往後退（看到危險反應，雙手抱頭往後縮） */
+#mendeleev.recoiling .men-body { animation: recoil 1.4s ease-out; }
+@keyframes recoil {
+  0%   { transform: translateX(0) rotate(0); }
+  22%  { transform: translateX(-26px) rotate(-11deg); }
+  60%  { transform: translateX(-22px) rotate(-9deg); }
+  100% { transform: translateX(0) rotate(0); }
+}
+#mendeleev.recoiling .men-arm.l { transform: rotate(-125deg); }
+#mendeleev.recoiling .men-arm.r { transform: rotate(125deg); }
+
+/* 行為：跳起來（對戰中有炸牌） */
+#mendeleev.jumping .men-body { animation: men-jump .5s ease-out 2; }
+#mendeleev.jumping .men-arm.l { transform: rotate(-130deg); }
+#mendeleev.jumping .men-arm.r { transform: rotate(130deg); }
+
+/* 行為：聳肩（對戰中沒反應） */
+#mendeleev.shrugging .men-arm.l { animation: shrug-l 1.2s ease; }
+#mendeleev.shrugging .men-arm.r { animation: shrug-r 1.2s ease; }
+@keyframes shrug-l { 0%,100% { transform: rotate(0); } 35%,70% { transform: rotate(-145deg); } }
+@keyframes shrug-r { 0%,100% { transform: rotate(0); } 35%,70% { transform: rotate(145deg); } }
+#mendeleev.shrugging .men-head,
+#mendeleev.shrugging .men-hair,
+#mendeleev.shrugging .men-beard { animation: shrug-head 1.2s ease; }
+@keyframes shrug-head { 0%,100% { transform: rotate(0) translateY(0); } 35%,70% { transform: rotate(6deg) translateY(2px); } }
+
+/* 燈泡（猶豫太久冒出來） */
+.men-bulb {
+  position: absolute; top: -30px; left: 30px; width: 26px; height: 34px;
+  opacity: 0; transform: scale(.5); transform-origin: bottom center;
+  transition: .2s; filter: drop-shadow(0 0 8px rgba(255,209,102,0.9));
+}
+#mendeleev.thinking .men-bulb { animation: bulb-flash 1s ease-in-out infinite; }
+@keyframes bulb-flash { 0%,100% { opacity: .4; transform: scale(.92); } 50% { opacity: 1; transform: scale(1.12); } }
+
+/* --- 對話泡泡 --- */
+.men-bubble {
+  position: fixed; z-index: 61; max-width: 220px;
+  background: var(--bg-2); color: var(--txt);
+  border: 1px solid var(--magic); border-radius: 12px;
+  padding: 8px 12px; font-size: 13px; line-height: 1.45;
+  box-shadow: var(--glow); opacity: 0; transform: translateY(6px);
+  transition: opacity .2s, transform .2s; pointer-events: none;
+}
+.men-bubble.show { opacity: 1; transform: translateY(0); }
+.men-bubble::after {
+  content: ""; position: absolute; bottom: -8px; left: 20px;
+  border: 8px solid transparent; border-top-color: var(--magic); border-bottom: 0;
+}
+
+/* --- 慶祝彩花 --- */
+.confetti {
+  position: fixed; z-index: 62; width: 9px; height: 9px; top: 0;
+  pointer-events: none; will-change: transform, opacity;
+  animation: confetti-fall linear forwards;
+}
+@keyframes confetti-fall {
+  0%   { transform: translateY(-20px) rotate(0); opacity: 1; }
+  100% { transform: translateY(105vh) rotate(720deg); opacity: 0; }
+}
+
+/* 手機上縮小一點 */
+@media (max-width: 600px) {
+  #mendeleev { transform: scale(.82); transform-origin: bottom left; }
+}
