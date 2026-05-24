@@ -66,8 +66,35 @@
 .turn-grp .lbl { font-size: 14px; color: var(--txt-dim); font-weight: 700; }
 .turn-btn { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line); background: var(--bg-3); color: var(--txt); cursor: pointer; font-size: 16px; transition: .15s; }
 .turn-btn:hover { background: var(--magic); color: #0a0612; box-shadow: var(--glow); }
-.cube-hint { text-align: center; color: var(--txt-faint); font-size: 13px; margin: 6px 0 12px; }
+.cube-hint { text-align: center; color: var(--txt-faint); font-size: 14px; margin: 8px 0 10px; }
+.cube-hint b { color: var(--txt-dim); }
 .cube-tools { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 8px; }
+
+/* 格子可拖曳的手勢游標 */
+.cube-cell { cursor: grab; }
+.cube-scene.grabbing .cube-cell { cursor: grabbing; }
+
+/* 拖曳提示動畫 */
+.cube-hint-anim {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  pointer-events: none; z-index: 6;
+}
+.cube-hint-anim .swipe-dot { font-size: 30px; filter: drop-shadow(0 0 10px var(--magic)); animation: swipe 1.9s ease-in-out infinite; }
+@keyframes swipe {
+  0% { transform: translateX(-46px) rotate(-8deg); opacity: 0; }
+  20% { opacity: 1; } 50% { transform: translateX(0) rotate(0); }
+  80% { opacity: 1; } 100% { transform: translateX(46px) rotate(8deg); opacity: 0; }
+}
+.cube-hint-anim .swipe-label { background: var(--bg-2); border: 1px solid var(--magic); border-radius: 999px; padding: 7px 16px; font-size: 15px; font-weight: 700; box-shadow: var(--glow); white-space: nowrap; }
+
+/* 轉動按鈕收進可折疊區（次要） */
+.cube-ctrl-fold { text-align: center; margin: 2px 0 10px; }
+.cube-ctrl-fold > summary { cursor: pointer; color: var(--txt-dim); font-size: 14px; list-style: none; display: inline-block; padding: 4px 12px; border: 1px solid var(--line); border-radius: 999px; }
+.cube-ctrl-fold > summary::-webkit-details-marker { display: none; }
+.cube-ctrl-fold[open] > summary { color: var(--magic); border-color: var(--magic); margin-bottom: 8px; }
+.cube-ctrl-fold .turn-btn { width: 30px; height: 30px; font-size: 14px; }
+.cube-ctrl-fold .turn-grp { padding: 3px 5px 3px 10px; }
 
 /* --- 反應解說面板 --- */
 .cube-react { margin-top: 12px; }

@@ -27,6 +27,18 @@
   let timerId = null;
   let els = {};               // DOM 參照
 
+  // 每一對配對成功後給一個專屬顏色 + 編號徽章，讓玩家一眼看出哪兩張是同一對
+  const PAIR_COLORS = ['#ff5a5f', '#ffd166', '#4dd0e1', '#b388ff', '#6bcB77', '#f15bb5', '#ff944d', '#7c9cff', '#43e0b0', '#e0c341', '#5fb0c9', '#ff8fc7'];
+  function markMatched(btnA, btnB, idx) {
+    const col = PAIR_COLORS[idx % PAIR_COLORS.length];
+    [btnA, btnB].forEach(b => {
+      b.classList.add('matched');
+      b.style.setProperty('--paircol', col);
+      const face = b.querySelector('.face');
+      if (face && !face.querySelector('.pair-badge')) face.insertAdjacentHTML('beforeend', `<span class="pair-badge">✨${idx + 1}</span>`);
+    });
+  }
+
   function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; }
 
   function colsFor(total) {
@@ -99,10 +111,9 @@
     // 翻開第二張 → 判定
     const a = deck[firstCard.i], b = card;
     if (a.id === b.id && firstCard.i !== i) {
-      // 配對成功
+      // 配對成功：保持翻開，並給這一對專屬顏色與 ✨ 編號
       a.matched = b.matched = true;
-      firstCard.btn.classList.add('matched');
-      btn.classList.add('matched');
+      markMatched(firstCard.btn, btn, matched);
       firstCard = null;
       matched++; updateStats();
       window.CHEM.sfx && window.CHEM.sfx.match();

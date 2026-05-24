@@ -35,7 +35,7 @@
     Object.keys(byFace).forEach(f => {
       byFace[f].sort((a, b) => { const ca = C.cell(a), cb = C.cell(b); return (ca.row - cb.row) || (ca.col - cb.col); });
       byFace[f].forEach(i => {
-        const c = document.createElement('div'); c.className = 'cube-cell';
+        const c = document.createElement('div'); c.className = 'cube-cell'; c.dataset.idx = i;
         c.innerHTML = `<span class="cs"></span><span class="cn"></span>`;
         faces[f].appendChild(c); cellNode[i] = c;
       });
@@ -58,25 +58,69 @@
 
   function applyOrbit() { els.cube.style.transform = `rotateX(${orbit.x}deg) rotateY(${orbit.y}deg)`; }
 
-  /* ---------- 拖曳轉視角 ---------- */
-  let orbitBound = false;
-  function bindOrbitWindow() {
-    if (orbitBound) return; orbitBound = true;
-    const move = e => {
-      if (!orbit.drag || !els.scene) return; const t = e.touches ? e.touches[0] : e;
+  /* ---------- 拖曳操作：拖「格子」=轉那一層、拖「空白」=轉視角 ---------- */
+  let dragBound = false;
+  const drag = { mode: null, sx: 0, sy: 0, idx: -1, committed: false };
+  const pt = e => e.touches ? e.touches[0] : e;
+
+  function bindWindowOnce() {
+    if (dragBound) return; dragBound = true;
+    window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp);
+    window.addEventListener('touchmove', onMove, { passive: false }); window.addEventListener('touchend', onUp);
+  }
+  function bindScene() {
+    els.scene.addEventListener('mousedown', onDown);
+    els.scene.addEventListener('touchstart', onDown, { passive: false });
+  }
+  function onDown(e) {
+    const t = pt(e);
+    const cell = e.target.closest && e.target.closest('.cube-cell');
+    drag.sx = t.clientX; drag.sy = t.clientY; drag.committed = false;
+    if (cell) { drag.mode = 'turn'; drag.idx = +cell.dataset.idx; hideHint(); if (e.cancelable) e.preventDefault(); }
+    else { drag.mode = 'orbit'; orbit.lx = t.clientX; orbit.ly = t.clientY; }
+    els.scene.classList.add('grabbing');
+  }
+  function onMove(e) {
+    if (!drag.mode) return;
+    const t = pt(e);
+    if (drag.mode === 'orbit') {
       orbit.y += (t.clientX - orbit.lx) * 0.5; orbit.x -= (t.clientY - orbit.ly) * 0.5;
       orbit.x = Math.max(-85, Math.min(85, orbit.x)); orbit.lx = t.clientX; orbit.ly = t.clientY;
-      if (els.cube) applyOrbit(); if (e.cancelable) e.preventDefault();
-    };
-    const up = () => { orbit.drag = false; els.scene && els.scene.classList.remove('grabbing'); };
-    window.addEventListener('mousemove', move); window.addEventListener('mouseup', up);
-    window.addEventListener('touchmove', move, { passive: false }); window.addEventListener('touchend', up);
+      applyOrbit(); if (e.cancelable) e.preventDefault();
+    } else if (drag.mode === 'turn' && !drag.committed) {
+      const dx = t.clientX - drag.sx, dy = t.clientY - drag.sy;
+      if (Math.hypot(dx, dy) > 16) { const name = computeMove(drag.idx, dx, dy); if (name) { drag.committed = true; turn(name); } }
+      if (e.cancelable) e.preventDefault();
+    }
   }
-  function bindSceneDown() {
-    const down = e => { orbit.drag = true; els.scene.classList.add('grabbing'); const t = e.touches ? e.touches[0] : e; orbit.lx = t.clientX; orbit.ly = t.clientY; };
-    els.scene.addEventListener('mousedown', down);
-    els.scene.addEventListener('touchstart', down, { passive: true });
+  function onUp() { drag.mode = null; els.scene && els.scene.classList.remove('grabbing'); }
+
+  // 拖曳格子 → 算出該轉哪一層、哪個方向（用瀏覽器真實 3D 矩陣換算螢幕方向）
+  const cross = (a, b) => [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
+  function screenDir(M, v) { const p = M.transformPoint(new DOMPoint(v[0], v[1], v[2])); const o = M.transformPoint(new DOMPoint(0, 0, 0)); return [p.x - o.x, p.y - o.y]; }
+  function computeMove(idx, dx, dy) {
+    const p = C.POS[idx];
+    let nA = 0; for (let a = 0; a < 3; a++) if (Math.abs(p[a]) === 1) nA = a;       // 面法向軸
+    const n = [0, 0, 0]; n[nA] = Math.sign(p[nA]);
+    const others = [0, 1, 2].filter(a => a !== nA);
+    const u = [0, 0, 0]; u[others[0]] = 1;
+    const v = [0, 0, 0]; v[others[1]] = 1;
+    let M; try { const ts = getComputedStyle(els.cube).transform; M = new DOMMatrix(ts === 'none' ? undefined : ts); } catch (e) { return null; }
+    const su = screenDir(M, u), sv = screenDir(M, v);
+    const cand = [
+      { d: u, s: su }, { d: u.map(x => -x), s: [-su[0], -su[1]] },
+      { d: v, s: sv }, { d: v.map(x => -x), s: [-sv[0], -sv[1]] },
+    ];
+    let best = cand[0], bd = -Infinity;
+    for (const c of cand) { const dot = c.s[0] * dx + c.s[1] * dy; if (dot > bd) { bd = dot; best = c; } }
+    const r = cross(n, best.d);                                                    // 旋轉軸 = 法向 × 拖曳方向
+    let ax = 0; for (let a = 0; a < 3; a++) if (Math.abs(r[a]) > 0.5) ax = a;
+    const rSign = Math.sign(r[ax]), ls = Math.sign(p[ax]);                          // 轉哪個半邊由該格座標決定
+    const base = ax === 0 ? (ls > 0 ? 'R' : 'L') : ax === 1 ? (ls > 0 ? 'U' : 'D') : (ls > 0 ? 'F' : 'B');
+    return rSign > 0 ? base : base + "'";
   }
+
+  function hideHint() { if (els.hintAnim) { els.hintAnim.remove(); els.hintAnim = null; } }
 
   /* ---------- 轉動 ---------- */
   function turn(name) {
@@ -205,9 +249,11 @@
     els.stage.innerHTML = `
       <div class="cube-bar">${bar}<div class="spacer"></div>
         <button class="btn ghost" id="c-mode">↺ 換模式</button></div>
-      <div class="cube-scene"><div class="cube3d"></div></div>
-      ${controlsHTML()}
-      <p class="cube-hint">🖱️ 拖曳方塊可轉動視角看各面　|　按鈕轉動方塊的某一層</p>
+      <div class="cube-scene"><div class="cube3d"></div>
+        <div class="cube-hint-anim" id="c-hintanim"><span class="swipe-dot">👆</span><span class="swipe-label">拖曳格子來旋轉</span></div>
+      </div>
+      <p class="cube-hint">✋ 直接<b>拖曳方塊上的格子</b>就能旋轉那一層（手機用手指滑）；拖空白處可轉動視角。</p>
+      <details class="cube-ctrl-fold"><summary>或用按鈕轉動 ▾</summary>${controlsHTML()}</details>
       <div class="cube-win-slot"></div>
       <div class="cube-react"></div>`;
 
@@ -216,13 +262,15 @@
     els.react = els.stage.querySelector('.cube-react');
     els.cur = els.stage.querySelector('#c-cur'); els.tot = els.stage.querySelector('#c-tot');
     els.time = els.stage.querySelector('#c-time'); els.stepN = els.stage.querySelector('#c-step'); els.remain = els.stage.querySelector('#c-remain');
+    els.hintAnim = els.stage.querySelector('#c-hintanim');
     els.stage.querySelector('#c-mode').onclick = showModes;
     els.stage.querySelectorAll('.turn-btn').forEach(b => b.onclick = () => turn(b.dataset.mv));
 
     buildCube();
     updateCells();
-    bindOrbitWindow();
-    bindSceneDown();
+    bindWindowOnce();
+    bindScene();
+    setTimeout(hideHint, 6000);
 
     const rs = C.reactions(place);
     highlight(rs);

@@ -61,11 +61,26 @@
 .mem-card .face .c-elem small { display: block; font-size: 15px; font-weight: 700; color: #efe9ff; margin-top: 2px; }
 .mem-card .face .c-trait { font-size: 13.5px; color: #f1edff; line-height: 1.5; }
 
-/* 配對成功 */
+/* 配對成功：保持翻開，每一對用專屬顏色 + ✨ 編號徽章標示 */
 .mem-card.matched { cursor: default; }
-.mem-card.matched .face { border-color: var(--gold); box-shadow: 0 0 18px rgba(255,209,102,0.5); animation: matched-pop .5s ease; }
+.mem-card.matched .inner { opacity: 1; }
+.mem-card.matched .face {
+  border: 2px solid var(--paircol, var(--gold));
+  box-shadow: 0 0 20px var(--paircol, var(--gold)), inset 0 0 22px -8px var(--paircol, var(--gold));
+  animation: matched-pop .5s ease;
+}
+/* 同色淡淡背景暈染（鋪在文字底下，不影響可讀性） */
+.mem-card.matched .face::before {
+  content: ""; position: absolute; inset: 0; z-index: 0;
+  background: radial-gradient(circle at 50% 120%, var(--paircol), transparent 70%); opacity: .22;
+}
+.mem-card.matched .face > * { position: relative; z-index: 1; }
 @keyframes matched-pop { 0% { transform: rotateY(180deg) scale(1); } 40% { transform: rotateY(180deg) scale(1.08); } 100% { transform: rotateY(180deg) scale(1); } }
-.mem-card.matched .inner { opacity: .9; }
+.pair-badge {
+  position: absolute; top: 6px; right: 6px; z-index: 2;
+  background: var(--paircol, var(--gold)); color: #0a0612; font-weight: 800; font-size: 13px;
+  padding: 2px 8px; border-radius: 999px; box-shadow: 0 0 10px var(--paircol, var(--gold));
+}
 
 /* --- 勝利畫面 --- */
 .s2-win {
