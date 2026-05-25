@@ -271,38 +271,72 @@
     CHEM.mendeleev && CHEM.mendeleev.poke();
   }
 
-  /* ---------- 週期表全覽 ---------- */
+  /* 沒有完整性格資料的元素（51~118）：顯示基本資料卡 */
+  function openBasic(e) {
+    const col = window.CHEM.PT_COLOR[e.group] || 'var(--magic)';
+    const gname = window.CHEM.PT_GROUP_NAME[e.group] || e.group;
+    ensureModal();
+    const m = mask.querySelector('.modal');
+    m.style.setProperty('--gcol', col);
+    m.innerHTML = `
+      <span class="close">✕</span>
+      <div class="m-head"><div class="m-sym">${e.sym}</div>
+        <div><div class="m-name">${e.name}</div><div class="m-meta">原子序 ${e.z} ・ ${gname}</div></div></div>
+      <div class="m-row"><b>原子序</b><span>${e.z}</span></div>
+      <div class="m-row"><b>族別</b><span>${gname}</span></div>
+      <div class="m-row"><b>週期表位置</b><span>第 ${e.p <= 7 ? e.p : (e.p === 9 ? '6（鑭系）' : '7（錒系）')} 週期</span></div>
+      <div class="persona"><span class="tag">${gname}</span><br>這個元素的完整性格檔案還沒收錄，但它在週期表的位置與族別都正確喔！</div>`;
+    m.querySelector('.close').onclick = closeModal;
+    mask.classList.add('show');
+    CHEM.mendeleev && CHEM.mendeleev.poke();
+  }
+
+  /* ---------- 週期表全覽（標準 118 元素排列） ---------- */
   function renderTable(root) {
-    const PT = window.CHEM.PT_POS;
+    const { PT118, PT_COLOR, PT_GROUP_NAME } = window.CHEM;
     const sub = document.createElement('p');
     sub.className = 'section-sub';
-    sub.textContent = '完整週期表，依族別上色。點任一元素看它的性格檔案。';
+    sub.textContent = '標準週期表（118 元素，依族別上色）。點任一元素看資料；手機可左右滑動查看完整版。';
     root.appendChild(sub);
 
+    const fitBtn = document.createElement('button'); fitBtn.className = 'btn ghost pt-fit-btn';
+    fitBtn.textContent = '🔍 縮小版（一頁完整顯示）';
+    root.appendChild(fitBtn);
+
     const scroll = document.createElement('div'); scroll.className = 'ptable-scroll';
-    const grid = document.createElement('div'); grid.className = 'ptable';
-    ELEMENTS.forEach(el => {
-      const pos = PT[el.symbol]; if (!pos) return;
-      const g = GROUPS[el.group];
-      const cell = document.createElement('button');
-      cell.className = 'pt-cell';
-      cell.style.gridColumn = pos.c; cell.style.gridRow = pos.p;
-      cell.style.setProperty('--gcol', g.color);
-      cell.title = `${el.name}・${g.name}`;
-      cell.innerHTML = `<span class="ptz">${el.z}</span><span class="pts">${el.symbol}</span><span class="ptn">${el.name}</span>`;
-      cell.onclick = () => openElement(el.symbol);
+    const grid = document.createElement('div'); grid.className = 'ptable-ov';
+    fitBtn.onclick = () => {
+      const on = grid.classList.toggle('fit');
+      scroll.classList.toggle('nofit', on);
+      fitBtn.textContent = on ? '↔ 標準大小（可左右滑動）' : '🔍 縮小版（一頁完整顯示）';
+    };
+
+    // 鑭系/錒系在主表第 3 族的佔位標記
+    [[6, '57–71'], [7, '89–103']].forEach(([p, txt]) => {
+      const mk = document.createElement('div'); mk.className = 'pt-marker';
+      mk.style.gridColumn = 3; mk.style.gridRow = p; mk.textContent = txt; grid.appendChild(mk);
+    });
+
+    PT118.forEach(e => {
+      const cell = document.createElement('button'); cell.className = 'pt-cell';
+      cell.style.gridColumn = e.c; cell.style.gridRow = e.p;
+      cell.style.setProperty('--gcol', PT_COLOR[e.group] || '#888');
+      cell.title = `${e.name}・${PT_GROUP_NAME[e.group] || ''}`;
+      cell.innerHTML = `<span class="ptz">${e.z}</span><span class="pts">${e.sym}</span>`;
+      cell.onclick = () => ELEMENT_BY_SYMBOL[e.sym] ? openElement(e.sym) : openBasic(e);
       grid.appendChild(cell);
     });
-    const lbl = document.createElement('div');
-    lbl.className = 'pt-rowlabel'; lbl.style.gridRow = '9'; lbl.style.gridColumn = '1 / span 2';
-    lbl.textContent = '錒系 ▸';
-    grid.appendChild(lbl);
+
+    [[9, '鑭系'], [10, '錒系']].forEach(([row, name]) => {
+      const lbl = document.createElement('div'); lbl.className = 'pt-rowlabel';
+      lbl.style.gridRow = row; lbl.style.gridColumn = '1 / span 2'; lbl.textContent = name; grid.appendChild(lbl);
+    });
     scroll.appendChild(grid); root.appendChild(scroll);
 
     const legend = document.createElement('div'); legend.className = 'pt-legend';
-    Object.values(GROUPS).forEach(g => {
+    Object.keys(PT_GROUP_NAME).forEach(g => {
       const s = document.createElement('span'); s.className = 'ptl';
-      s.innerHTML = `<i style="background:${g.color}"></i>${g.name}`;
+      s.innerHTML = `<i style="background:${PT_COLOR[g]}"></i>${PT_GROUP_NAME[g]}`;
       legend.appendChild(s);
     });
     root.appendChild(legend);
