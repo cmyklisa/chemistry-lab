@@ -57,31 +57,25 @@
   function gravity() {
     for (let c = 0; c < COLS; c++) { const col = []; for (let r = ROWS - 1; r >= 0; r--) if (board[r][c]) col.push(board[r][c]); for (let r = ROWS - 1; r >= 0; r--) board[r][c] = col[ROWS - 1 - r] || null; }
   }
-  // newSet：剛落定方塊的格子座標。第一輪只算「新格 vs 既有堆疊」的相鄰，避免方塊內部自爆；連鎖後不限制。
+  // 只結算「剛落定的方塊(新) 碰到 既有堆疊(舊)」且會反應的相鄰格：單次、不連鎖、不算方塊內部。
+  // → 方塊絕不會自爆；必須把方塊擺到讓某元素碰到堆疊中會反應的元素才會消除。
   function resolveReactions(newSet) {
-    let total = 0, chains = 0, sample = null, first = true;
-    while (true) {
-      const mark = Array.from({ length: ROWS }, () => Array(COLS).fill(false)); let any = false;
-      for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
-        if (!board[r][c]) continue;
-        [[0, 1], [1, 0]].forEach(([dr, dc]) => {
-          const nr = r + dr, nc = c + dc; if (nr >= ROWS || nc >= COLS || !board[nr][nc]) return;
-          if (board[r][c] === board[nr][nc]) return;   // 同一種元素相鄰不算反應
-          if (first && newSet) {                        // 落地當下：必須一新一舊（方塊碰到堆疊）才反應
-            const aNew = newSet.has(r + ',' + c), bNew = newSet.has(nr + ',' + nc);
-            if (aNew === bNew) return;                   // 兩格都新(內部) 或 都舊 → 跳過
-          }
-          const res = predict(EBS[board[r][c]], EBS[board[nr][nc]]);
-          if (res.react) { mark[r][c] = mark[nr][nc] = true; any = true; if (!sample) sample = res; }
-        });
-      }
-      if (!any) break;
-      chains++;
-      for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if (mark[r][c]) { board[r][c] = null; total++; }
-      gravity();
-      first = false;
+    const mark = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
+    let total = 0, sample = null;
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+      if (!board[r][c]) continue;
+      [[0, 1], [1, 0]].forEach(([dr, dc]) => {
+        const nr = r + dr, nc = c + dc; if (nr >= ROWS || nc >= COLS || !board[nr][nc]) return;
+        if (board[r][c] === board[nr][nc]) return;                    // 同一種元素不反應
+        const aNew = newSet.has(r + ',' + c), bNew = newSet.has(nr + ',' + nc);
+        if (aNew === bNew) return;                                    // 一定要一新一舊（方塊內部、堆疊內部都不自發反應）
+        const res = predict(EBS[board[r][c]], EBS[board[nr][nc]]);
+        if (res.react) { mark[r][c] = mark[nr][nc] = true; if (!sample) sample = res; }
+      });
     }
-    return { total, chains, sample };
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if (mark[r][c]) { board[r][c] = null; total++; }
+    if (total > 0) gravity();
+    return { total, chains: 1, sample };
   }
 
   function lockAndResolve() {

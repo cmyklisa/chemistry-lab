@@ -36,6 +36,9 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body { height: 100%; }
+html { -webkit-text-size-adjust: 100%; }
+/* 按鈕/可點元素關閉「雙擊放大」，避免快速點按時畫面亂縮放（仍保留一般點擊與雙指縮放） */
+button, .stage-card, .el-card, .mem-card, .b-cardbtn, .pick, .tab, .cube-mode, .pz-piece, .pt-cell { touch-action: manipulation; }
 
 body {
   font-family: var(--ff);
