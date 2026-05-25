@@ -18,6 +18,9 @@
   let slots = [null, null];      // 兩個反應物 symbol
   let els = {};                  // DOM 參照
   let busy = false;
+  let score = 0, asked = 0;      // 猜測計分
+  const GOOD = ['猜對了，了不起！', '化學直覺很準！', '答對啦！', '漂亮，就是這樣！'];
+  function updateScore() { if (els.score) { els.score.textContent = score; els.asked.textContent = asked; } }
 
   function rnd(a, b) { return a + Math.random() * (b - a); }
 
@@ -91,9 +94,17 @@
 
   function refresh() {
     renderSlots();
-    const ready = slots[0] && slots[1];
-    els.mixBtn.disabled = !ready;
     els.picker.querySelectorAll('.pick').forEach(p => p.classList.toggle('selected', slots.includes(p.dataset.sym)));
+    if (!busy) {
+      if (slots[0] && slots[1]) {
+        els.guess.innerHTML = `<span class="guess-q">你覺得它們會不會反應？</span>
+          <button class="btn primary" data-g="1">⚗️ 會反應</button>
+          <button class="btn ghost" data-g="0">🚫 不會反應</button>`;
+        els.guess.querySelectorAll('[data-g]').forEach(b => b.onclick = () => reveal(b.dataset.g === '1'));
+      } else {
+        els.guess.innerHTML = `<span class="guess-q dim">先從下方選兩個元素…</span>`;
+      }
+    }
     M() && M().poke();
   }
 
@@ -106,14 +117,17 @@
     refresh();
   }
 
-  /* ---------- 混合！ ---------- */
-  function mix() {
+  /* ---------- 猜測後揭曉 ---------- */
+  function reveal(guess) {
     if (busy || !slots[0] || !slots[1]) return;
-    busy = true; els.mixBtn.disabled = true;
+    busy = true; els.guess.innerHTML = '';
     const a = window.CHEM.ELEMENT_BY_SYMBOL[slots[0]];
     const b = window.CHEM.ELEMENT_BY_SYMBOL[slots[1]];
     const r = predict(a, b);
     const dg = DANGER[r.danger];
+    const correct = (guess === r.react);
+    asked++; if (correct) score++; updateScore();
+    if (asked % 5 === 0 && window.CHEM.records) window.CHEM.records.record('stage3', { score });  // 每 5 題記一次成績
 
     els.result.classList.add('hidden');
     els.cauldron.classList.add('mixing');
@@ -123,20 +137,25 @@
       els.liquid.style.background = `linear-gradient(180deg, ${dg.liquid}, ${dg.liquid})`;
       playEffect(r.type);
       if (r.react) window.CHEM.sfx && window.CHEM.sfx.reaction(r.type);
-      // 門得列夫反應
-      if (r.danger === 'danger' || r.danger === 'extreme') M() && M().recoil();
-      else M() && M().nod();
     }, 450);
 
-    setTimeout(() => { showResult(a, b, r, dg); busy = false; els.cauldron.classList.remove('mixing'); renderSlots(); }, 1400);
+    setTimeout(() => {
+      showResult(a, b, r, dg, guess, correct);
+      busy = false; els.cauldron.classList.remove('mixing'); renderSlots();
+      if (correct) M() && M().clap(GOOD[(Math.random() * GOOD.length) | 0]);
+      else M() && M().shake('猜錯囉，看看下面的原因～');
+    }, 1400);
   }
 
-  function showResult(a, b, r, dg) {
+  function showResult(a, b, r, dg, guess, correct) {
     const reactLine = r.react
       ? `生成物：<span class="formula">${r.product}（${r.formula}）</span>`
       : `<span style="color:var(--txt-dim)">沒有生成新物質</span>`;
     els.result.innerHTML = `
       <div class="panel">
+        <div class="rx-verdict ${correct ? 'ok' : 'no'}">
+          ${correct ? '✅ 猜對了！' : '❌ 猜錯了'} —— 你猜「${guess ? '會反應' : '不會反應'}」，實際上它們${r.react ? '<b>會</b>' : '<b>不會</b>'}反應
+        </div>
         <div class="rx-head">
           <h3>${r.title}</h3>
           <span class="danger-badge" style="color:${dg.color};background:${dg.color}22;border:1.5px solid ${dg.color}">${dg.ico} ${dg.label}</span>
@@ -150,7 +169,7 @@
           <h4>🔮 電子怎麼移動？</h4>
           <p>${r.electron}</p>
         </div>
-        <div class="mix-row"><button class="btn ghost" id="rx-clear">↻ 清空，再試一次</button></div>
+        <div class="mix-row"><button class="btn primary" id="rx-clear">↻ 再猜一題</button></div>
       </div>`;
     els.result.classList.remove('hidden');
     els.result.querySelector('#rx-clear').onclick = () => { slots = [null, null]; clearFx(); els.liquid.style.background = ''; els.result.classList.add('hidden'); refresh(); };
@@ -160,15 +179,16 @@
   function mount(root) {
     root.innerHTML = `
       <h2 class="section-title">第三階段 ✦ 魔法混合實驗室</h2>
-      <p class="section-sub">從下方選兩個元素丟進魔法釜，看看會發生什麼反應。</p>
-      <p class="lab-hint">點元素加入魔法釜（最多兩個），按下「混合」見證魔法。點釜中的元素可以拿出來。</p>
+      <p class="section-sub">先選兩個元素，<b>猜猜看它們會不會反應</b>，再確認答案！</p>
+      <p class="lab-hint">點下方元素加入魔法釜（最多兩個），猜「會 / 不會」反應後見真章。點釜中元素可拿出來。</p>
+      <div class="guess-score">🏆 答對 <b id="lab-score">0</b> / <span id="lab-asked">0</span> 題</div>
 
       <div class="cauldron" id="lab-cauldron">
         <div class="slots-in" id="lab-slots"></div>
         <div class="fx" id="lab-fx"></div>
         <div class="liquid" id="lab-liquid"></div>
       </div>
-      <div class="mix-row"><button class="btn primary" id="lab-mix" disabled>⚗️ 混合！</button></div>
+      <div class="mix-row guess-row" id="lab-guess"></div>
 
       <div class="picker-title">元素選擇盤（依族別上色）</div>
       <div class="el-picker" id="lab-picker"></div>
@@ -180,7 +200,9 @@
       slots: root.querySelector('#lab-slots'),
       fx: root.querySelector('#lab-fx'),
       liquid: root.querySelector('#lab-liquid'),
-      mixBtn: root.querySelector('#lab-mix'),
+      guess: root.querySelector('#lab-guess'),
+      score: root.querySelector('#lab-score'),
+      asked: root.querySelector('#lab-asked'),
       picker: root.querySelector('#lab-picker'),
       result: root.querySelector('#lab-result'),
     };
@@ -196,7 +218,6 @@
       els.picker.appendChild(b);
     });
 
-    els.mixBtn.onclick = mix;
     refresh();
   }
 

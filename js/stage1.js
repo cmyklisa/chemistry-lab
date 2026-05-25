@@ -257,6 +257,58 @@
     root.appendChild(list);
   }
 
+  /* ---------- 核心規律 ---------- */
+  function renderRules(root) {
+    const grid = document.createElement('div');
+    grid.className = 'rules-grid';
+    window.CHEM.RULES.forEach(r => {
+      const c = document.createElement('div');
+      c.className = 'rule-card';
+      c.innerHTML = `<div class="ric">${r.icon}</div><h3>${r.title}</h3><p>${r.desc}</p>`;
+      grid.appendChild(c);
+    });
+    root.appendChild(grid);
+    CHEM.mendeleev && CHEM.mendeleev.poke();
+  }
+
+  /* ---------- 週期表全覽 ---------- */
+  function renderTable(root) {
+    const PT = window.CHEM.PT_POS;
+    const sub = document.createElement('p');
+    sub.className = 'section-sub';
+    sub.textContent = '完整週期表，依族別上色。點任一元素看它的性格檔案。';
+    root.appendChild(sub);
+
+    const scroll = document.createElement('div'); scroll.className = 'ptable-scroll';
+    const grid = document.createElement('div'); grid.className = 'ptable';
+    ELEMENTS.forEach(el => {
+      const pos = PT[el.symbol]; if (!pos) return;
+      const g = GROUPS[el.group];
+      const cell = document.createElement('button');
+      cell.className = 'pt-cell';
+      cell.style.gridColumn = pos.c; cell.style.gridRow = pos.p;
+      cell.style.setProperty('--gcol', g.color);
+      cell.title = `${el.name}・${g.name}`;
+      cell.innerHTML = `<span class="ptz">${el.z}</span><span class="pts">${el.symbol}</span><span class="ptn">${el.name}</span>`;
+      cell.onclick = () => openElement(el.symbol);
+      grid.appendChild(cell);
+    });
+    const lbl = document.createElement('div');
+    lbl.className = 'pt-rowlabel'; lbl.style.gridRow = '9'; lbl.style.gridColumn = '1 / span 2';
+    lbl.textContent = '錒系 ▸';
+    grid.appendChild(lbl);
+    scroll.appendChild(grid); root.appendChild(scroll);
+
+    const legend = document.createElement('div'); legend.className = 'pt-legend';
+    Object.values(GROUPS).forEach(g => {
+      const s = document.createElement('span'); s.className = 'ptl';
+      s.innerHTML = `<i style="background:${g.color}"></i>${g.name}`;
+      legend.appendChild(s);
+    });
+    root.appendChild(legend);
+    CHEM.mendeleev && CHEM.mendeleev.poke();
+  }
+
   /* ---------- 掛載第一階段 ---------- */
   function mount(root) {
     root.innerHTML = `
@@ -264,8 +316,10 @@
       <p class="section-sub">先搞懂原子和電子，再認識 50 個元素的性格。</p>
       <div class="tabs">
         <button class="tab active" data-t="learn">📖 認識原子</button>
+        <button class="tab" data-t="rules">📜 核心規律</button>
         <button class="tab" data-t="cards">🃏 元素卡片</button>
         <button class="tab" data-t="groups">🏰 分族介紹</button>
+        <button class="tab" data-t="table">🔬 週期表</button>
       </div>
       <div class="s1-body"></div>`;
     const body = root.querySelector('.s1-body');
@@ -274,8 +328,10 @@
       tabs.forEach(x => x.classList.toggle('active', x.dataset.t === t));
       body.innerHTML = '';
       if (t === 'learn') renderLessons(body);
+      else if (t === 'rules') renderRules(body);
       else if (t === 'cards') renderCards(body);
-      else renderGroups(body);
+      else if (t === 'groups') renderGroups(body);
+      else renderTable(body);
     }
     tabs.forEach(tab => tab.onclick = () => switchTo(tab.dataset.t));
     switchTo('learn');

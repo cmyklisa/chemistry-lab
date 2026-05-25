@@ -147,8 +147,48 @@ const ELEMENTS = [
 const ELEMENT_BY_SYMBOL = {};
 ELEMENTS.forEach(e => { ELEMENT_BY_SYMBOL[e.symbol] = e; });
 
+/* --- 四條核心規律（第一、四、七階段共用） --- */
+const RULES = [
+  { icon: '⚡', title: '活潑金屬遇非金屬會反應', desc: '鈉、鉀、鈣這類活潑金屬最外層只有 1~2 顆電子，很想丟掉；遇到想要電子的非金屬（如氯、氧）就會反應，往往很劇烈。' },
+  { icon: '⬇️', title: '同族越下面越活潑', desc: '同一族（直行）由上往下，最外層離原子核越遠、越容易得失電子，所以金屬越下面越活潑（鹵素則相反，越上面越會搶電子）。' },
+  { icon: '🛡️', title: '惰性氣體誰都不怕', desc: '氦、氖、氬…最外層電子已經填滿，非常滿足，不需要得失電子，幾乎不和任何元素反應。' },
+  { icon: '💎', title: '貴金屬很穩定', desc: '金、鉑、銀這些貴金屬不太願意失去電子，所以不易生鏽、不易反應，能長久保持光澤。' },
+];
+
+/* --- 元素性格圖示（四類）：易失電子 / 搶電子 / 穩定 / 惰性 --- */
+const PERSONA = {
+  lose:   { key: 'lose',   icon: '📤', label: '易失電子', color: '#ff5a5f' },
+  grab:   { key: 'grab',   icon: '🧲', label: '搶電子',   color: '#b388ff' },
+  stable: { key: 'stable', icon: '🛡️', label: '穩定',     color: '#ffd166' },
+  inert:  { key: 'inert',  icon: '😴', label: '惰性',     color: '#7c9cff' },
+};
+function personaOf(el) {
+  const g = el.group;
+  if (g === 'noble') return PERSONA.inert;
+  if (g === 'alkali' || g === 'alkaline') return PERSONA.lose;
+  if (g === 'halogen') return PERSONA.grab;
+  if (g === 'nonmetal') return el.symbol === 'H' ? PERSONA.lose : PERSONA.grab;
+  return PERSONA.stable;   // 過渡金屬 / 貧金屬 / 類金屬 / 放射性
+}
+
+/* --- 週期表座標（p=週期列, c=族欄 1~18；U/Pu 放錒系獨立列 p:9） --- */
+const PT_POS = {
+  H:{p:1,c:1}, He:{p:1,c:18},
+  Li:{p:2,c:1}, Be:{p:2,c:2}, B:{p:2,c:13}, C:{p:2,c:14}, N:{p:2,c:15}, O:{p:2,c:16}, F:{p:2,c:17}, Ne:{p:2,c:18},
+  Na:{p:3,c:1}, Mg:{p:3,c:2}, Al:{p:3,c:13}, Si:{p:3,c:14}, P:{p:3,c:15}, S:{p:3,c:16}, Cl:{p:3,c:17}, Ar:{p:3,c:18},
+  K:{p:4,c:1}, Ca:{p:4,c:2}, Sc:{p:4,c:3}, Ti:{p:4,c:4}, V:{p:4,c:5}, Cr:{p:4,c:6}, Mn:{p:4,c:7}, Fe:{p:4,c:8}, Co:{p:4,c:9}, Ni:{p:4,c:10}, Cu:{p:4,c:11}, Zn:{p:4,c:12}, Ga:{p:4,c:13}, Ge:{p:4,c:14}, As:{p:4,c:15}, Se:{p:4,c:16}, Br:{p:4,c:17}, Kr:{p:4,c:18},
+  Ag:{p:5,c:11}, Sn:{p:5,c:14}, I:{p:5,c:17},
+  Cs:{p:6,c:1}, Ba:{p:6,c:2}, W:{p:6,c:6}, Pt:{p:6,c:10}, Au:{p:6,c:11}, Hg:{p:6,c:12}, Pb:{p:6,c:14}, Rn:{p:6,c:18},
+  Ra:{p:7,c:2},
+  U:{p:9,c:6}, Pu:{p:9,c:8},
+};
+
 /* 掛到全域，給其他檔案使用（不用打包工具，直接共用全域變數） */
 window.CHEM = window.CHEM || {};
 window.CHEM.GROUPS = GROUPS;
 window.CHEM.ELEMENTS = ELEMENTS;
 window.CHEM.ELEMENT_BY_SYMBOL = ELEMENT_BY_SYMBOL;
+window.CHEM.RULES = RULES;
+window.CHEM.PERSONA = PERSONA;
+window.CHEM.personaOf = personaOf;
+window.CHEM.PT_POS = PT_POS;

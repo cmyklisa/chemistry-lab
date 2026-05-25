@@ -133,8 +133,38 @@
 }
 .group-block .members .m:hover { background: var(--gcol); color: #0a0612; }
 
+/* --- 核心規律卡 --- */
+.rules-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+.rule-card {
+  background: linear-gradient(160deg, var(--bg-2), var(--bg-1));
+  border: 1px solid var(--line); border-radius: var(--radius); padding: 20px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.4); position: relative; overflow: hidden;
+}
+.rule-card::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 0% 0%, rgba(179,136,255,.16), transparent 60%); }
+.rule-card .ric { font-size: 34px; }
+.rule-card h3 { font-size: 19px; margin: 8px 0; color: var(--gold); }
+.rule-card p { font-size: 15px; color: var(--txt-dim); line-height: 1.7; }
+
+/* --- 週期表全覽 --- */
+.ptable-scroll { overflow-x: auto; padding-bottom: 8px; }
+.ptable { display: grid; grid-template-columns: repeat(18, minmax(34px, 1fr)); gap: 3px; min-width: 640px; }
+.pt-cell {
+  aspect-ratio: 1; border: none; border-radius: 5px; cursor: pointer; padding: 1px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: var(--gcol); color: #0a0612; transition: .15s;
+}
+.pt-cell:hover { transform: scale(1.12); box-shadow: 0 0 12px var(--gcol); z-index: 2; }
+.pt-cell .ptz { font-size: 9px; line-height: 1; opacity: .8; }
+.pt-cell .pts { font-size: clamp(11px, 1.5vw, 16px); font-weight: 800; line-height: 1.1; }
+.pt-cell .ptn { font-size: 9px; line-height: 1; }
+.pt-rowlabel { display: flex; align-items: center; justify-content: flex-end; font-size: 12px; color: var(--txt-dim); padding-right: 6px; }
+.pt-legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.pt-legend .ptl { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; color: var(--txt-dim); }
+.pt-legend .ptl i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+
 @media (max-width: 600px) {
   .lesson { grid-template-columns: 1fr; }
   .lesson .stage-vis { min-height: 220px; }
   .card-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+  .pt-cell .ptn { display: none; }
 }

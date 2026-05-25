@@ -85,6 +85,17 @@
 .b-gameover h3 { font-size: 28px; color: var(--gold); margin: 8px 0; }
 .b-gameover p { color: var(--txt-dim); font-size: 17px; margin-bottom: 18px; }
 
+/* 規律卡按鈕（角落） + 性格圖示 + 規律彈窗 */
+.rules-btn { float: right; margin: 2px 0 0 8px; font-size: 14px; padding: 7px 14px; border-radius: 999px; background: var(--bg-2); border: 1px solid var(--gold); color: var(--gold); cursor: pointer; transition: .2s; }
+.rules-btn:hover { box-shadow: var(--glow-gold); transform: translateY(-1px); }
+.bc-persona { font-size: 15px; }
+.b-card .bc-grp { font-size: 11px; color: var(--txt-dim); }
+.rule-mini { display: flex; gap: 12px; padding: 11px 0; border-top: 1px solid var(--line); }
+.rule-mini:first-child { border-top: none; }
+.rule-mini .rmi { font-size: 26px; flex-shrink: 0; }
+.rule-mini b { color: var(--gold); font-size: 15px; }
+.rule-mini p { font-size: 14px; color: var(--txt-dim); margin-top: 3px; line-height: 1.6; }
+
 @media (max-width: 600px) {
   .b-scoreboard { flex-direction: column; gap: 8px; }
   .b-card { width: 76px; height: 108px; }

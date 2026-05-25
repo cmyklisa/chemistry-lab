@@ -30,13 +30,29 @@
   }
 
   function cardHTML(sym, extra) {
-    const el = ELEMENT_BY_SYMBOL[sym], g = GROUPS[el.group];
-    return `<div class="b-card ${extra || ''}" style="--gcol:${g.color}">
-      <div class="bc-top"><span>${el.z}</span><span>${el.valence}e⁻</span></div>
+    const el = ELEMENT_BY_SYMBOL[sym], g = GROUPS[el.group], pe = window.CHEM.personaOf(el);
+    return `<div class="b-card ${extra || ''}" style="--gcol:${g.color}" title="${el.name}・${g.name}・${pe.label}">
+      <div class="bc-top"><span>${el.z}</span><span class="bc-persona">${pe.icon}</span></div>
       <div class="bc-sym">${el.symbol}</div>
       <div class="bc-name">${el.name}</div>
-      <div class="bc-grp">${g.name}</div>
+      <div class="bc-grp">${pe.label}</div>
     </div>`;
+  }
+
+  /* 規律卡彈窗（顯示四條核心規律） */
+  function showRules() {
+    let mask = document.querySelector('.rules-mask');
+    if (!mask) {
+      mask = document.createElement('div'); mask.className = 'modal-mask rules-mask';
+      mask.innerHTML = `<div class="modal"><span class="close">✕</span><h3 style="margin-bottom:12px;color:var(--gold)">📜 四條核心規律</h3><div class="rules-modal-body"></div></div>`;
+      document.body.appendChild(mask);
+      mask.addEventListener('click', e => { if (e.target === mask) mask.classList.remove('show'); });
+      mask.querySelector('.close').onclick = () => mask.classList.remove('show');
+      const body = mask.querySelector('.rules-modal-body');
+      window.CHEM.RULES.forEach(r => body.insertAdjacentHTML('beforeend', `<div class="rule-mini"><span class="rmi">${r.icon}</span><div><b>${r.title}</b><p>${r.desc}</p></div></div>`));
+    }
+    mask.classList.add('show');
+    window.CHEM.sfx && window.CHEM.sfx.click();
   }
 
   function renderScore() {
@@ -238,12 +254,14 @@
   /* ---------- 掛載 ---------- */
   function mount(root) {
     root.innerHTML = `
+      <button class="rules-btn" id="b-rules">📜 規律卡</button>
       <h2 class="section-title">第四階段 ✦ 對戰卡牌</h2>
       <p class="section-sub">出牌方暴露一張牌；回應方出一張牌試著反應掉它——能反應就把這兩張一起炸掉（1 換 1），不能反應則場上的牌安全留回出牌方、回應方那張白白用掉。手牌先清空的人輸！</p>
       <div class="b-scoreboard" id="b-score"></div>
       <div id="b-stage"></div>`;
     score = root.querySelector('#b-score');
     stage = root.querySelector('#b-stage');
+    root.querySelector('#b-rules').onclick = showRules;
     showModeSelect();
   }
 

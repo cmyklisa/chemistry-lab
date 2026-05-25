@@ -209,6 +209,23 @@ body.on-intro .topbar { display: none; }
 .sfx-toggle:hover { border-color: var(--magic); box-shadow: var(--glow); transform: translateY(-1px); }
 .sfx-toggle.off { opacity: .6; }
 
+/* ===================== 我的紀錄 ===================== */
+.rec-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+.rec-card { background: linear-gradient(160deg, var(--bg-2), var(--bg-1)); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; box-shadow: 0 10px 30px rgba(0,0,0,.4); }
+.rec-head { display: flex; align-items: center; gap: 12px; }
+.rec-ico { font-size: 30px; }
+.rec-name { font-size: 18px; font-weight: 800; }
+.rec-best { font-size: 15px; color: var(--txt-dim); }
+.rec-best b { color: var(--gold); font-size: 20px; }
+.rec-spark { margin: 12px 0 6px; }
+.spark { display: block; }
+.spark polyline { stroke: var(--cyan); stroke-width: 2.5; }
+.spark circle { fill: var(--gold); }
+.spark text { fill: var(--txt-dim); font-size: 11px; }
+.rec-empty { color: var(--txt-faint); font-size: 13px; padding: 16px 0; text-align: center; }
+.rec-last { font-size: 13px; color: var(--txt-dim); }
+.dim { color: var(--txt-faint); }
+
 /* 尊重「減少動態」偏好 */
 @media (prefers-reduced-motion: reduce) {
   *, body::before { animation: none !important; transition: none !important; }

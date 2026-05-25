@@ -242,15 +242,21 @@
     solvedC = true; clearInterval(timerId);
     highlight([]);
     els.react.innerHTML = '';
+    const sec = Math.round((Date.now() - startTime) / 1000);
+    const score = Math.max(50, 1200 - steps * 15 - sec * 4);
+    const rec = window.CHEM.records ? window.CHEM.records.record('stage6', { score, time: sec }) : { isRecord: false, best: { score } };
     els.stage.querySelector('.cube-win-slot').innerHTML = `
       <div class="cube-win">
         <div class="go-ico">🏆</div>
         <h3>炸彈拆除成功！</h3>
-        <p>用了 <b style="color:var(--gold)">${steps}</b> 步、<b style="color:var(--gold)">${fmt(Date.now() - startTime)}</b>，把所有相鄰反應都化解了！</p>
+        <p>本次 <b style="color:var(--gold)">${score}</b> 分（${steps} 步・${fmt(sec * 1000)}）<br>
+        最高紀錄 <b style="color:var(--cyan)">${rec.best.score}</b> 分
+        ${rec.isRecord ? '<br><span style="color:var(--cyan);font-weight:800">✨ 新紀錄！</span>' : ''}</p>
         <button class="btn primary" id="cube-again">再拆一顆</button>
       </div>`;
     els.stage.querySelector('#cube-again').onclick = () => startMode('C');
-    mendel(null, true);
+    if (rec.isRecord) M() && M().celebrate('破紀錄！拆彈高手！🎉');
+    else M() && M().clap('拆彈成功，安全了！');
   }
 
   /* ---------- 控制盤 ---------- */
@@ -347,12 +353,12 @@
 
   function mount(root) {
     root.innerHTML = `
-      <h2 class="section-title">第五階段 ✦ 元素魔術方塊</h2>
+      <h2 class="section-title">第六階段 ✦ 元素魔術方塊</h2>
       <p class="section-sub">2×2 方塊，每面 4 個元素格。轉動方塊讓不同元素相鄰——同一面上相鄰的兩格若會反應就會被偵測出來。</p>
       <div id="cube-stage"></div>`;
     els.stage = root.querySelector('#cube-stage');
     showModes();
   }
 
-  window.CHEM.stage5 = { mount };
+  window.CHEM.stage6 = { mount };   // 已移為第六階段
 })();

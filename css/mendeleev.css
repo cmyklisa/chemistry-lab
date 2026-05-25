@@ -12,9 +12,13 @@
   width: 88px;
   height: 138px;
   z-index: 60;
-  pointer-events: none;
+  pointer-events: auto;        /* 可點擊 / 拖曳 / 長按 */
+  cursor: grab;
+  touch-action: none;
+  -webkit-user-select: none; user-select: none;
   filter: drop-shadow(0 6px 9px rgba(0,0,0,0.5));
 }
+#mendeleev:active { cursor: grabbing; }
 #mendeleev.face-left .men-body { transform: scaleX(-1); }
 
 .men-body { position: absolute; inset: 0; }
@@ -81,6 +85,43 @@
 #mendeleev.recoiling .men-arm.l { transform: rotate(-125deg); }
 #mendeleev.recoiling .men-arm.r { transform: rotate(125deg); }
 
+/* 行為：扭屁股慶祝（破紀錄 / 全部完成）——誇張可愛、約 2 秒 */
+#mendeleev.twerking .men-body { transform-origin: bottom center; animation: men-twerk 2.1s ease-in-out; }
+@keyframes men-twerk {
+  0%   { transform: translateY(0) rotate(0); }
+  8%   { transform: translateY(-24px) rotate(0); }
+  16%  { transform: translateY(0) rotate(0); }
+  26%  { transform: translateY(-3px) rotate(-14deg) translateX(-7px); }
+  38%  { transform: translateY(-3px) rotate(14deg) translateX(7px); }
+  50%  { transform: translateY(-3px) rotate(-14deg) translateX(-7px); }
+  62%  { transform: translateY(-3px) rotate(14deg) translateX(7px); }
+  74%  { transform: translateY(-3px) rotate(-11deg) translateX(-6px); }
+  86%  { transform: translateY(-22px) rotate(0); }
+  100% { transform: translateY(0) rotate(0); }
+}
+#mendeleev.twerking .men-arm.l { animation: men-twerk-arm-l 2.1s ease-in-out; }
+#mendeleev.twerking .men-arm.r { animation: men-twerk-arm-r 2.1s ease-in-out; }
+@keyframes men-twerk-arm-l { 0%,100% { transform: rotate(-150deg); } 50% { transform: rotate(-118deg); } }
+@keyframes men-twerk-arm-r { 0%,100% { transform: rotate(150deg); } 50% { transform: rotate(118deg); } }
+
+/* 點擊隨機動作：跳一下 / 揮手 / 轉圈 / 冒星星 */
+#mendeleev.hopping .men-body { animation: men-hop .42s ease 2; }
+@keyframes men-hop { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+#mendeleev.waving .men-arm.r { transform-origin: top center; animation: men-wave .28s ease-in-out 5; }
+@keyframes men-wave { 0%,100% { transform: rotate(135deg); } 50% { transform: rotate(168deg); } }
+#mendeleev.spinning .men-body { animation: men-spin .8s ease-in-out; }
+@keyframes men-spin { from { transform: rotateY(0); } to { transform: rotateY(360deg); } }
+#mendeleev.sparkling .men-body { animation: men-hop .42s ease; }
+
+/* 點擊冒出的星星粒子 */
+.men-spark { position: fixed; z-index: 62; font-size: 16px; pointer-events: none; }
+.men-spark { animation: men-spark-fly .9s ease-out forwards; }
+@keyframes men-spark-fly {
+  0%   { transform: translate(-50%,-50%) rotate(var(--a)) translateX(0); opacity: 0; }
+  20%  { opacity: 1; }
+  100% { transform: translate(-50%,-50%) rotate(var(--a)) translateX(var(--d)); opacity: 0; }
+}
+
 /* 行為：跳起來（對戰中有炸牌） */
 #mendeleev.jumping .men-body { animation: men-jump .5s ease-out 2; }
 #mendeleev.jumping .men-arm.l { transform: rotate(-130deg); }
@@ -95,6 +136,17 @@
 #mendeleev.shrugging .men-hair,
 #mendeleev.shrugging .men-beard { animation: shrug-head 1.2s ease; }
 @keyframes shrug-head { 0%,100% { transform: rotate(0) translateY(0); } 35%,70% { transform: rotate(6deg) translateY(2px); } }
+
+/* 行為：難過（垂頭、身體下沉、雙手下垂） */
+#mendeleev.sad .men-body { animation: sad-slump .5s ease forwards; }
+@keyframes sad-slump { to { transform: translateY(4px); } }
+#mendeleev.sad .men-head,
+#mendeleev.sad .men-hair,
+#mendeleev.sad .men-beard { animation: sad-head .5s ease forwards; }
+@keyframes sad-head { to { transform: translateY(5px) rotate(-4deg); } }
+#mendeleev.sad .men-arm.l { transform: rotate(-6deg); }
+#mendeleev.sad .men-arm.r { transform: rotate(6deg); }
+#mendeleev.sad .men-eye { animation: none; transform: scaleY(.5); }
 
 /* 燈泡（猶豫太久冒出來） */
 .men-bulb {

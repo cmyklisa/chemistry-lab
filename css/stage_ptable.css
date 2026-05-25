@@ -1,0 +1,44 @@
+/* =====================================================================
+   第五階段：週期表拼圖 — 樣式（沿用 stage1.css 的 .ptable / .pt-cell）
+   ===================================================================== */
+.pt-cell.locked { cursor: default; }
+.pt-cell.locked:hover { transform: none; box-shadow: none; }
+.pt-cell.correct { animation: pt-pop .4s ease; }
+@keyframes pt-pop { 40% { transform: scale(1.18); } }
+
+.pt-slot {
+  aspect-ratio: 1; border-radius: 5px; border: 2px dashed rgba(179,136,255,.4);
+  background: rgba(255,255,255,.03); display: flex; align-items: center; justify-content: center; position: relative;
+}
+.pt-slot .slot-z { font-size: 10px; color: var(--txt-faint); }
+.pt-slot.wrong { border-color: var(--danger); background: rgba(255,90,95,.2); animation: pt-shake .4s ease; }
+@keyframes pt-shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+
+.pz-tray { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; min-height: 60px; }
+.pz-tile {
+  width: 60px; height: 56px; border-radius: 8px; border: 2px solid var(--gcol);
+  background: linear-gradient(160deg, var(--bg-3), var(--bg-2));
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  cursor: grab; touch-action: none; transition: .15s;
+}
+.pz-tile .pts { font-size: 18px; font-weight: 800; color: var(--gcol); line-height: 1.1; }
+.pz-tile .ptn { font-size: 10px; color: #f0ebff; }
+.pz-tile:hover { transform: translateY(-2px); box-shadow: 0 0 10px var(--gcol); }
+.pz-tile.picked { opacity: .3; }
+.pz-tile.bounce { animation: pz-bounce .4s ease; }
+@keyframes pz-bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
+
+.pz-ghost {
+  position: fixed; z-index: 90; width: 60px; height: 56px; border-radius: 8px; border: 2px solid var(--gold);
+  background: linear-gradient(160deg, var(--bg-3), var(--bg-2)); display: flex; flex-direction: column;
+  align-items: center; justify-content: center; pointer-events: none; transform: translate(-50%,-50%); box-shadow: var(--glow-gold);
+}
+.pz-ghost .pts { font-size: 18px; font-weight: 800; color: var(--gold); }
+.pz-ghost .ptn { font-size: 10px; color: #fff; }
+
+.pz-win-slot { margin: 14px 0; }
+.pz-win { text-align: center; padding: 24px; border: 1px solid var(--gold); border-radius: var(--radius);
+  background: radial-gradient(circle at 50% 0%, rgba(255,209,102,.14), transparent 70%), var(--bg-1); }
+.pz-win .go-ico { font-size: 46px; }
+.pz-win h3 { font-size: 24px; color: var(--gold); margin: 6px 0; }
+.pz-win p { color: var(--txt-dim); font-size: 16px; margin-bottom: 14px; }

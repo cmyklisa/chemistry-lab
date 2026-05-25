@@ -15,6 +15,23 @@
   let idleTimer = null;
   let busyTimer = null;
   let bubbleTimer = null;
+  let parked = false;          // 被玩家拖到固定位置後就不再踱步
+  let dragging = false;
+  let lastAction = null;       // 上次點擊動作（避免連續重複）
+  const POS_KEY = 'chemlab.men.pos';
+  const ACTIONS = ['hopping', 'waving', 'spinning', 'sparkling'];
+  const TRIVIA = [
+    '你知道嗎？金幾乎不會生鏽，所以古代金幣到現在都還亮晶晶。',
+    '氦氣比空氣輕，吸一口聲音會變高——但別玩太多，會缺氧喔！',
+    '水其實是氫氣燒起來的產物：2H₂ + O₂ → 2H₂O。',
+    '鈉碰到水會劇烈反應冒火，所以它都泡在油裡保存。',
+    '鑽石和鉛筆芯其實都是碳，差別只在原子排列方式！',
+    '霓虹燈的橘紅色光，是氖氣通電發出來的。',
+    '鎢的熔點高達 3422°C，所以拿來做燈泡的燈絲。',
+    '別氣餒，化學家也是試了千百次才成功的，繼續加油！',
+    '每答對一題，你的化學直覺就更強一點，我看好你！',
+    '搞不懂沒關係，多玩幾次就懂了——我相信你！',
+  ];
 
   function bounds() {
     // 待在畫面左側角落範圍內踱步
@@ -121,16 +138,23 @@
         </svg>
       </div>`;
     document.body.appendChild(el);
-    el.classList.add('men-in');                 // 登場動畫
-    setTimeout(() => el.classList.remove('men-in'), 1200);
     body = el.querySelector('.men-body');
 
     bubble = document.createElement('div');
     bubble.className = 'men-bubble';
     document.body.appendChild(bubble);
 
-    pickTarget();
-    el.classList.add('walking');
+    // 還原玩家上次拖放的位置
+    try {
+      const s = JSON.parse(localStorage.getItem(POS_KEY));
+      if (s && typeof s.x === 'number') { parked = true; x = s.x; el.style.left = s.x + 'px'; el.style.top = s.y + 'px'; el.style.bottom = 'auto'; }
+    } catch (e) {}
+
+    if (!parked) {
+      el.classList.add('men-in'); setTimeout(() => el.classList.remove('men-in'), 1200);   // 登場動畫（固定時不播）
+      pickTarget(); el.classList.add('walking');
+    }
+    bindInteractions();
     loop();
     resetIdleTimer();
   }
@@ -143,7 +167,7 @@
   }
 
   function loop() {
-    if (mode === 'walk') {
+    if (mode === 'walk' && !parked && !dragging) {
       const dist = targetX - x;
       if (Math.abs(dist) < 1.5) {
         // 抵達後停一下再選新目標
@@ -188,8 +212,7 @@
     busyTimer = setTimeout(() => {
       el.classList.remove(cls);
       mode = 'walk';
-      pickTarget();
-      el.classList.add('walking');
+      if (!parked) { pickTarget(); el.classList.add('walking'); }   // 已被固定就留在原地
       if (after) after();
     }, dur);
   }
@@ -215,6 +238,77 @@
       if (Math.random() > 0.5) c.style.borderRadius = '50%';
       document.body.appendChild(c);
       setTimeout(() => c.remove(), 3500);
+    }
+  }
+
+  /* --- 互動：點擊隨機動作 / 拖曳定位 / 長按冷知識 --- */
+  function bindInteractions() {
+    let downT = 0, sx = 0, sy = 0, offX = 0, offY = 0, lpTimer = null, longFired = false, moved = false;
+    const start = e => {
+      const t = e.touches ? e.touches[0] : e;
+      const r = el.getBoundingClientRect();
+      downT = Date.now(); sx = t.clientX; sy = t.clientY; offX = t.clientX - r.left; offY = t.clientY - r.top;
+      moved = false; longFired = false;
+      clearTimeout(lpTimer);
+      lpTimer = setTimeout(() => { longFired = true; if (!dragging) sayTrivia(); }, 2000);   // 長按 2 秒
+      if (e.cancelable) e.preventDefault();
+    };
+    const move = e => {
+      if (!downT) return;
+      const t = e.touches ? e.touches[0] : e;
+      if (!moved && Math.hypot(t.clientX - sx, t.clientY - sy) < 6) return;
+      moved = true; dragging = true; clearTimeout(lpTimer);
+      el.classList.remove('walking', 'thinking');
+      const nx = Math.max(0, Math.min(window.innerWidth - 40, t.clientX - offX));
+      const ny = Math.max(0, Math.min(window.innerHeight - 40, t.clientY - offY));
+      el.style.left = nx + 'px'; el.style.top = ny + 'px'; el.style.bottom = 'auto'; x = nx;
+      positionBubble();
+      if (e.cancelable) e.preventDefault();
+    };
+    const end = () => {
+      if (!downT) return;
+      clearTimeout(lpTimer);
+      if (dragging) {                                   // 拖曳 → 固定在此處並記住
+        parked = true; mode = 'walk';
+        try { localStorage.setItem(POS_KEY, JSON.stringify({ x: parseFloat(el.style.left), y: parseFloat(el.style.top) })); } catch (e) {}
+      } else if (!longFired) {                          // 短按 → 隨機動作
+        randomAction();
+      }
+      downT = 0; dragging = false;
+    };
+    el.addEventListener('mousedown', start);
+    el.addEventListener('touchstart', start, { passive: false });
+    window.addEventListener('mousemove', move);
+    window.addEventListener('touchmove', move, { passive: false });
+    window.addEventListener('mouseup', end);
+    window.addEventListener('touchend', end);
+  }
+
+  // 點一下：隨機做一個不重複的小動作
+  function randomAction() {
+    resetIdleTimer();
+    const pool = ACTIONS.filter(a => a !== lastAction);
+    const a = pool[(Math.random() * pool.length) | 0];
+    lastAction = a;
+    if (a === 'sparkling') { sparkleBurst(); sfx('match'); }
+    else if (a === 'hopping') sfx('flip');
+    doAction(a, a === 'spinning' ? 800 : 1100);
+  }
+
+  // 長按兩秒：說一句化學冷知識或鼓勵
+  function sayTrivia() {
+    resetIdleTimer();
+    say('💡 ' + TRIVIA[(Math.random() * TRIVIA.length) | 0], 6000);
+    sfx('click');
+  }
+
+  function sparkleBurst() {
+    const r = el.getBoundingClientRect();
+    for (let i = 0; i < 8; i++) {
+      const s = document.createElement('div'); s.className = 'men-spark'; s.textContent = '✨';
+      s.style.left = (r.left + r.width / 2) + 'px'; s.style.top = (r.top + r.height / 2) + 'px';
+      s.style.setProperty('--a', (i * 45) + 'deg'); s.style.setProperty('--d', (38 + Math.random() * 28) + 'px');
+      document.body.appendChild(s); setTimeout(() => s.remove(), 900);
     }
   }
 
@@ -247,7 +341,7 @@
     say(msg || '太厲害了！全部完成！🎉', 4000);
     sfx('victory');
     confettiBurst();
-    doAction('celebrate', 1600);
+    doAction('twerking', 2100);   // 撒花 + 誇張扭屁股
   };
 
   // 猶豫太久：頭上冒燈泡（給提示）
@@ -284,6 +378,14 @@
     resetIdleTimer();
     say(msg || '唉，沒反應…（聳肩）', 3000);
     doAction('shrugging', 1300);
+  };
+
+  // 遊戲結束：難過（垂頭喪氣）
+  M.sad = function (msg) {
+    resetIdleTimer();
+    say(msg || '唉…疊到頂了，下次再加油。', 3600);
+    sfx('fail');
+    doAction('sad', 2200);
   };
 
   // 主動說話

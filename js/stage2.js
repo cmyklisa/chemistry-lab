@@ -134,19 +134,25 @@
   function finishGame() {
     clearInterval(timerId); timerId = null;
     const time = Date.now() - startTime;
+    const sec = Math.round(time / 1000);
     const prev = getBest();
-    const isRecord = !prev || flips < prev.flips || (flips === prev.flips && time < prev.time);
-    if (isRecord) localStorage.setItem(bestKey(), JSON.stringify({ flips, time }));
+    if (!prev || flips < prev.flips || (flips === prev.flips && time < prev.time)) localStorage.setItem(bestKey(), JSON.stringify({ flips, time }));
     updateStats();
+
+    // 計分（越高越好）：對數越多、翻牌越少、時間越短 → 分數越高
+    const score = Math.max(10, pairs * 100 - flips * 8 - sec * 2);
+    const rec = window.CHEM.records ? window.CHEM.records.record('stage2', { score, time: sec }) : { isRecord: false, best: { score } };
 
     els.win.innerHTML = `
       <h3>🎉 全部配對完成！</h3>
-      <p>共翻牌 <b style="color:var(--gold)">${flips}</b> 次，花了 <b style="color:var(--gold)">${fmtTime(time)}</b>。
-      ${isRecord ? '<br><span class="newrec">✦ 刷新最佳紀錄！</span>' : ''}</p>
+      <p>本次得分 <b style="color:var(--gold)">${score}</b> 分（翻牌 ${flips} 次・${fmtTime(time)}）<br>
+      最高紀錄 <b style="color:var(--cyan)">${rec.best.score}</b> 分
+      ${rec.isRecord ? '<br><span class="newrec">✨ 新紀錄！</span>' : ''}</p>
       <button class="btn primary again">再玩一局</button>`;
     els.win.classList.remove('hidden');
     els.win.querySelector('.again').onclick = newGame;
-    M() && M().celebrate('太厲害了，全部配對完成！🎉');
+    if (rec.isRecord) M() && M().celebrate('破紀錄啦！太厲害了！🎉');
+    else M() && M().clap('全部配對完成，做得好！');
   }
 
   /* ---------- 掛載 ---------- */
