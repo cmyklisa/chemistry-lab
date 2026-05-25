@@ -16,7 +16,9 @@
   const TICON = { explosion: '💥', burn: '🔥', bubble: '🫧', glow: '✨', corrode: '🟤', alloy: '🔩', none: '·' };
 
   let mode, place, solved;
-  let steps = 0, total = 0, timerId = null, startTime = 0, solvedC = false;
+  let steps = 0, total = 0, timerId = null, startTime = 0, solvedC = false, solvedA = false;
+  // 模式A：六面各一個元素（挑六種不同族別 → 六種顏色，像魔術方塊用符號代替顏色）
+  const FACE_ELS = { U: 'Na', D: 'O', F: 'Fe', B: 'Cl', L: 'Al', R: 'Ca' };
   let els = {}, cellNode = [];
   const orbit = { x: -24, y: -32, drag: false, lx: 0, ly: 0 };
 
@@ -162,25 +164,29 @@
     window.CHEM.sfx && window.CHEM.sfx.flip();
     els.cube.classList.remove('turned'); void els.cube.offsetWidth; els.cube.classList.add('turned');
     updateCells();
+    M() && M().poke();
+
+    if (mode === 'A') {                       // 還原練習：純轉動、無化學反應
+      steps++;
+      if (!startTime && !solvedA) { startTime = Date.now(); timerId = setInterval(tick, 250); }
+      updateBarA();
+      if (isRestored() && !solvedA) winA();
+      return;
+    }
+
     const rs = C.reactions(place);
     highlight(rs);
     burst(rs);
     if (rs.length) { const w = rs.reduce((a, b) => RANK[b.res.danger] > RANK[a.res.danger] ? b : a); window.CHEM.sfx && window.CHEM.sfx.reaction(w.res.type); }
-    M() && M().poke();
 
     if (mode === 'B') {
-      total += rs.length;
-      reactPanel(rs, 'B');
-      mendel(rs, false);
+      total += rs.length; reactPanel(rs, 'B'); updateBarB(rs.length); mendel(rs, false);
     } else {
       steps++;
       if (!startTime && !solvedC) { startTime = Date.now(); timerId = setInterval(tick, 250); }
-      updateBarC(rs.length);
-      reactPanel(rs, 'C');
-      if (rs.length === 0 && !solvedC) winC();
-      else mendel(rs, false);
+      updateBarC(rs.length); reactPanel(rs, 'C');
+      if (rs.length === 0 && !solvedC) winC(); else mendel(rs, false);
     }
-    if (mode === 'B') updateBarB(rs.length);
   }
 
   function highlight(rs) {
@@ -238,6 +244,32 @@
   function updateBarB(cur) { els.cur && (els.cur.textContent = cur); els.tot && (els.tot.textContent = total); }
   function updateBarC(remain) { els.remain && (els.remain.textContent = remain); els.stepN && (els.stepN.textContent = steps); }
 
+  /* ---------- 模式 A：還原練習 ---------- */
+  function byFaceElems() { const f = {}; for (let i = 0; i < 24; i++) { const k = C.faceName(i); (f[k] = f[k] || []).push(place[i]); } return f; }
+  function facesDone() { return Object.values(byFaceElems()).filter(a => a.every(x => x === a[0])).length; }
+  function isRestored() { return facesDone() === 6; }
+  function updateBarA() { els.stepN && (els.stepN.textContent = steps); els.faces && (els.faces.textContent = facesDone() + '/6'); }
+
+  function winA() {
+    solvedA = true; clearInterval(timerId);
+    const sec = Math.round((Date.now() - startTime) / 1000);
+    els.stage.querySelector('.cube-win-slot').innerHTML = `
+      <div class="cube-win">
+        <div class="go-ico">🎉</div>
+        <h3>還原成功！</h3>
+        <p>用了 <b style="color:var(--gold)">${steps}</b> 步、<b style="color:var(--gold)">${fmt(sec * 1000)}</b>，六個面都還原了！<br>已經熟悉轉動了，來挑戰有化學反應的進階模式吧！</p>
+        <div class="b-center">
+          <button class="btn ghost" id="cube-again">再練一次</button>
+          <button class="btn primary" id="cube-toB">⚡ 模式 B</button>
+          <button class="btn primary" id="cube-toC">💣 模式 C</button>
+        </div>
+      </div>`;
+    els.stage.querySelector('#cube-again').onclick = () => startMode('A');
+    els.stage.querySelector('#cube-toB').onclick = () => startMode('B');
+    els.stage.querySelector('#cube-toC').onclick = () => startMode('C');
+    M() && M().celebrate('還原成功！太棒了，扭一個！🎉');
+  }
+
   function winC() {
     solvedC = true; clearInterval(timerId);
     highlight([]);
@@ -270,16 +302,22 @@
 
   /* ---------- 啟動某模式 ---------- */
   function startMode(m) {
-    mode = m; steps = 0; total = 0; solvedC = false; clearInterval(timerId); timerId = null; startTime = 0;
+    mode = m; steps = 0; total = 0; solvedC = false; solvedA = false; clearInterval(timerId); timerId = null; startTime = 0;
     orbit.x = -24; orbit.y = -32;
-    solved = C.findSafe();
-    if (m === 'B') {
-      place = solved.slice();
+    if (m === 'A') {
+      solved = []; for (let i = 0; i < 24; i++) solved[i] = FACE_ELS[C.faceName(i)];
+      let n = 0; do { place = C.scramble(solved, 12); n++; } while (isRestored() && n < 30);
     } else {
-      let n = 0; do { place = C.scramble(solved, 16); n++; } while (C.reactions(place).length < 6 && n < 60);
+      solved = C.findSafe();
+      if (m === 'B') place = solved.slice();
+      else { let n = 0; do { place = C.scramble(solved, 16); n++; } while (C.reactions(place).length < 6 && n < 60); }
     }
 
-    const bar = m === 'B'
+    const bar = m === 'A'
+      ? `<div class="stat-pill"><span class="v" id="c-time">00:00</span><span class="k">時間</span></div>
+         <div class="stat-pill"><span class="v" id="c-step">0</span><span class="k">步數</span></div>
+         <div class="stat-pill"><span class="v" id="c-faces">0/6</span><span class="k">完成面</span></div>`
+      : m === 'B'
       ? `<div class="stat-pill"><span class="v" id="c-cur">0</span><span class="k">本次反應</span></div>
          <div class="stat-pill"><span class="v" id="c-tot">0</span><span class="k">累計觸發</span></div>`
       : `<div class="stat-pill"><span class="v" id="c-time">00:00</span><span class="k">時間</span></div>
@@ -316,6 +354,7 @@
     els.react = els.stage.querySelector('.cube-react');
     els.cur = els.stage.querySelector('#c-cur'); els.tot = els.stage.querySelector('#c-tot');
     els.time = els.stage.querySelector('#c-time'); els.stepN = els.stage.querySelector('#c-step'); els.remain = els.stage.querySelector('#c-remain');
+    els.faces = els.stage.querySelector('#c-faces');
     els.hintAnim = els.stage.querySelector('#c-hintanim');
     els.arrow = null;                                  // 上一局的箭頭已隨 scene 重建移除
     els.stage.querySelector('#c-mode').onclick = showModes;
@@ -327,10 +366,16 @@
     bindScene();
     setTimeout(hideHint, 6000);
 
-    const rs = C.reactions(place);
-    highlight(rs);
-    if (m === 'B') { reactPanel(rs, 'B'); updateBarB(rs.length); M() && M().say('自由轉動方塊，讓元素們碰在一起引發反應，越多越好！', 4000); }
-    else { updateBarC(rs.length); reactPanel(rs, 'C'); M() && M().recoil('這是危險配置！把它轉到全部安全。'); }
+    if (m === 'A') {
+      els.react.innerHTML = '<div class="cr-summary ok">把 6 個面各自轉成同一種元素就完成！（用元素符號代替顏色的魔術方塊）</div>';
+      updateBarA();
+      M() && M().say('先熟悉轉動：把每個面轉成同一個元素，就像玩魔術方塊！', 4500);
+    } else {
+      const rs = C.reactions(place);
+      highlight(rs);
+      if (m === 'B') { reactPanel(rs, 'B'); updateBarB(rs.length); M() && M().say('自由轉動方塊，讓元素們碰在一起引發反應，越多越好！', 4000); }
+      else { updateBarC(rs.length); reactPanel(rs, 'C'); M() && M().recoil('這是危險配置！把它轉到全部安全。'); }
+    }
   }
 
   /* ---------- 模式選擇 ---------- */
@@ -338,6 +383,10 @@
     clearInterval(timerId);
     els.stage.innerHTML = `
       <div class="cube-modes">
+        <button class="cube-mode" data-m="A">
+          <div class="ico">🎲</div><h3>模式 A：還原練習</h3>
+          <p>入門款！六個面各有一種元素，被打亂了。像玩魔術方塊一樣把每個面轉回同一種元素，先熟悉轉動邏輯～</p>
+        </button>
         <button class="cube-mode" data-m="B">
           <div class="ico">⚡</div><h3>模式 B：連鎖反應</h3>
           <p>自由轉動方塊，讓相鄰的元素互相反應。觸發爆炸、冒泡、發光、生鏽… 盡量引發越多反應越好！</p>
@@ -354,7 +403,7 @@
   function mount(root) {
     root.innerHTML = `
       <h2 class="section-title">第六階段 ✦ 元素魔術方塊</h2>
-      <p class="section-sub">2×2 方塊，每面 4 個元素格。轉動方塊讓不同元素相鄰——同一面上相鄰的兩格若會反應就會被偵測出來。</p>
+      <p class="section-sub">2×2 方塊，三種玩法：還原練習（入門）、連鎖反應、炸彈拆除。同一面上相鄰的兩格若會反應就會被偵測出來。</p>
       <div id="cube-stage"></div>`;
     els.stage = root.querySelector('#cube-stage');
     showModes();

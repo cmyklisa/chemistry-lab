@@ -146,7 +146,7 @@
 .rule-card p { font-size: 15px; color: var(--txt-dim); line-height: 1.7; }
 
 /* --- 週期表全覽 --- */
-.ptable-scroll { overflow-x: auto; padding-bottom: 8px; }
+.ptable-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; padding-bottom: 8px; }
 .ptable { display: grid; grid-template-columns: repeat(18, minmax(34px, 1fr)); gap: 3px; min-width: 640px; }
 .pt-cell {
   aspect-ratio: 1; border: none; border-radius: 5px; cursor: pointer; padding: 1px;
@@ -165,7 +165,8 @@
 /* --- 標準完整週期表全覽（118 元素，格子等大） --- */
 .pt-fit-btn { margin: 4px 0 10px; }
 .ptable-scroll.nofit { overflow-x: hidden; }
-.ptable-ov { display: grid; grid-template-columns: repeat(18, 40px); grid-auto-rows: 40px; gap: 3px; width: max-content; margin: 2px auto 0; }
+/* 靠左排列（不要用 margin:auto 置中，否則超出寬度的左半會滑不到） */
+.ptable-ov { display: grid; grid-template-columns: repeat(18, 40px); grid-auto-rows: 40px; gap: 3px; width: max-content; margin: 2px 0 0; }
 .ptable-ov.fit { grid-template-columns: repeat(18, 1fr); grid-auto-rows: auto; width: 100%; }
 .ptable-ov .pt-cell { aspect-ratio: 1; }
 .ptable-ov.fit .pt-cell .ptz { font-size: 6px; }
