@@ -388,6 +388,21 @@
     doAction('sad', 2200);
   };
 
+  // 暫停時：坐下來等待（持續到 standUp）
+  M.sit = function (msg) {
+    resetIdleTimer(); clearTimeout(busyTimer);
+    mode = 'busy';
+    el.classList.remove('walking', 'thinking');
+    el.classList.add('sitting');
+    if (msg) say(msg, 0);
+  };
+  M.standUp = function () {
+    el.classList.remove('sitting');
+    say('');
+    mode = 'walk';
+    if (!parked) { pickTarget(); el.classList.add('walking'); }
+  };
+
   // 主動說話
   M.say = say;
 

@@ -1,40 +1,34 @@
 /* =====================================================================
-   第五階段：週期表拼圖 — 樣式（沿用 stage1.css 的 .ptable / .pt-cell）
+   第五階段：週期表拼圖（118 元素 + 拼圖塊）— 樣式
+   沿用 stage1.css 的 .ptable / .pt-cell；以下為完整表與拼圖塊專用。
    ===================================================================== */
+.ptable-full { grid-template-columns: repeat(18, minmax(30px, 1fr)); min-width: 600px; }
+.ptable-full .pt-cell .ptz { font-size: 8px; }
+.ptable-full .pt-cell .pts { font-size: clamp(10px, 1.4vw, 14px); }
+
 .pt-cell.locked { cursor: default; }
 .pt-cell.locked:hover { transform: none; box-shadow: none; }
-.pt-cell.correct { animation: pt-pop .4s ease; }
-@keyframes pt-pop { 40% { transform: scale(1.18); } }
+.pt-cell.filled { border: 2px solid #6bcB77; }           /* 放對 → 綠框 */
+.pt-cell.correct { animation: pt-green .8s ease; }
+@keyframes pt-green { 0%,100% { box-shadow: none; } 45% { box-shadow: 0 0 16px 3px #6bcB77; filter: brightness(1.35); } }
 
-.pt-slot {
-  aspect-ratio: 1; border-radius: 5px; border: 2px dashed rgba(179,136,255,.4);
-  background: rgba(255,255,255,.03); display: flex; align-items: center; justify-content: center; position: relative;
-}
-.pt-slot .slot-z { font-size: 10px; color: var(--txt-faint); }
-.pt-slot.wrong { border-color: var(--danger); background: rgba(255,90,95,.2); animation: pt-shake .4s ease; }
+.pt-slot { aspect-ratio: 1; border-radius: 4px; border: 2px dashed rgba(179,136,255,.4); background: rgba(255,255,255,.03); display: flex; align-items: center; justify-content: center; }
+.pt-slot .slot-z { font-size: 9px; color: var(--txt-faint); }
+.pt-slot.wrong { border-color: var(--danger); background: rgba(255,90,95,.28); animation: pt-shake .4s ease; }
 @keyframes pt-shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+.pt-rowlabel { display: flex; align-items: center; justify-content: flex-end; font-size: 11px; color: var(--txt-dim); padding-right: 4px; }
 
-.pz-tray { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; min-height: 60px; }
-.pz-tile {
-  width: 60px; height: 56px; border-radius: 8px; border: 2px solid var(--gcol);
-  background: linear-gradient(160deg, var(--bg-3), var(--bg-2));
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  cursor: grab; touch-action: none; transition: .15s;
-}
-.pz-tile .pts { font-size: 18px; font-weight: 800; color: var(--gcol); line-height: 1.1; }
-.pz-tile .ptn { font-size: 10px; color: #f0ebff; }
-.pz-tile:hover { transform: translateY(-2px); box-shadow: 0 0 10px var(--gcol); }
-.pz-tile.picked { opacity: .3; }
-.pz-tile.bounce { animation: pz-bounce .4s ease; }
+/* 拼圖塊托盤 */
+.pz-tray { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; min-height: 64px; align-items: flex-start; }
+.pz-piece { display: grid; gap: 2px; cursor: grab; touch-action: none; padding: 3px; background: rgba(255,255,255,.03); border: 1px solid var(--line); border-radius: 8px; transition: box-shadow .15s; }
+.pz-piece:hover { box-shadow: 0 0 10px rgba(179,136,255,.4); }
+.pz-piece.picked { opacity: .3; }
+.pz-piece.bounce { animation: pz-bounce .4s ease; }
 @keyframes pz-bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
-
-.pz-ghost {
-  position: fixed; z-index: 90; width: 60px; height: 56px; border-radius: 8px; border: 2px solid var(--gold);
-  background: linear-gradient(160deg, var(--bg-3), var(--bg-2)); display: flex; flex-direction: column;
-  align-items: center; justify-content: center; pointer-events: none; transform: translate(-50%,-50%); box-shadow: var(--glow-gold);
-}
-.pz-ghost .pts { font-size: 18px; font-weight: 800; color: var(--gold); }
-.pz-ghost .ptn { font-size: 10px; color: #fff; }
+.pz-pcell { border-radius: 5px; border: 1.5px solid var(--gcol); background: linear-gradient(160deg, var(--bg-3), var(--bg-2)); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.pz-pcell .pz-z { font-size: 8px; color: var(--txt-dim); line-height: 1; }
+.pz-pcell .pz-s { font-size: 14px; font-weight: 800; color: var(--gcol); line-height: 1.1; }
+.pz-ghost { position: fixed; z-index: 90; pointer-events: none; opacity: .92; box-shadow: var(--glow-gold); background: var(--bg-1); }
 
 .pz-win-slot { margin: 14px 0; }
 .pz-win { text-align: center; padding: 24px; border: 1px solid var(--gold); border-radius: var(--radius);

@@ -122,6 +122,13 @@
   100% { transform: translate(-50%,-50%) rotate(var(--a)) translateX(var(--d)); opacity: 0; }
 }
 
+/* 行為：坐下等待（暫停時） */
+#mendeleev.sitting .men-body { transform: translateY(20px); }
+#mendeleev.sitting .men-leg.l { transform: translateY(-6px) rotate(76deg); }
+#mendeleev.sitting .men-leg.r { transform: translateY(-6px) rotate(-76deg); }
+#mendeleev.sitting .men-arm.l { transform: rotate(10deg); }
+#mendeleev.sitting .men-arm.r { transform: rotate(-10deg); }
+
 /* 行為：跳起來（對戰中有炸牌） */
 #mendeleev.jumping .men-body { animation: men-jump .5s ease-out 2; }
 #mendeleev.jumping .men-arm.l { transform: rotate(-130deg); }

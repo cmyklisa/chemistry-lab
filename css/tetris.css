@@ -1,14 +1,15 @@
 /* =====================================================================
-   第七階段：元素俄羅斯方塊 — 樣式
+   第七階段：元素俄羅斯方塊 — 樣式（按鈕貼棋盤下方、側欄資訊）
    ===================================================================== */
-.tt-wrap { display: flex; gap: 18px; align-items: flex-start; justify-content: center; flex-wrap: wrap; margin-top: 10px; }
+.tt-wrap { display: flex; gap: 20px; align-items: flex-start; justify-content: center; flex-wrap: wrap; margin-top: 10px; }
+.tt-board-col { display: flex; flex-direction: column; align-items: center; }
 .tt-board-wrap { position: relative; }
 .tt-board {
-  display: grid; grid-template-columns: repeat(6, 1fr); grid-template-rows: repeat(12, 1fr); gap: 2px;
-  width: min(228px, 64vw); aspect-ratio: 1 / 2; padding: 4px;
+  display: grid; grid-template-columns: repeat(7, 1fr); grid-template-rows: repeat(14, 1fr); gap: 2px;
+  width: min(252px, 70vw); aspect-ratio: 1 / 2; padding: 4px;
   background: rgba(8,4,16,.6); border: 2px solid var(--line); border-radius: 10px; box-shadow: inset 0 0 24px rgba(0,0,0,.5);
 }
-.tt-cell { border-radius: 4px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: clamp(11px, 3.4vw, 15px); background: rgba(255,255,255,.03); }
+.tt-cell { border-radius: 4px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: clamp(10px, 3vw, 14px); background: rgba(255,255,255,.03); }
 .tt-cell.on { background: var(--gcol); color: #0a0612; box-shadow: inset 0 0 6px rgba(0,0,0,.35); }
 .tt-board.flash { animation: tt-flash .25s ease; }
 @keyframes tt-flash { 50% { filter: brightness(1.7); } }
@@ -21,17 +22,26 @@
 .tt-over p { color: var(--txt-dim); font-size: 15px; margin-bottom: 12px; }
 .tt-over .btn { margin: 4px; }
 
-.tt-side { display: flex; flex-direction: column; gap: 10px; min-width: 124px; }
-.tt-next, .tt-rules { background: var(--bg-2); border: 1px solid var(--line); border-radius: 10px; padding: 10px; }
-.tt-next { text-align: center; }
-.tt-next .nl, .tt-rules .nl { font-size: 12px; color: var(--txt-dim); margin-bottom: 6px; }
-.tt-next span { display: inline-flex; width: 34px; height: 34px; align-items: center; justify-content: center; border-radius: 6px; background: var(--gcol); color: #0a0612; font-weight: 800; margin: 1px; }
-.tt-rule { display: flex; gap: 6px; align-items: center; font-size: 12px; color: var(--txt-dim); padding: 3px 0; }
-.tt-rule span { font-size: 16px; }
-
-.tt-ctrls { display: flex; gap: 8px; justify-content: center; margin: 16px 0 4px; }
-.tt-btn { width: 54px; height: 50px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg-3); color: var(--txt); font-size: 22px; cursor: pointer; transition: .15s; }
+/* 按鈕緊貼棋盤正下方 */
+.tt-ctrls { display: flex; gap: 6px; justify-content: center; margin-top: 8px; width: min(252px, 70vw); }
+.tt-btn { flex: 1; height: 48px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg-3); color: var(--txt); font-size: 20px; cursor: pointer; transition: .15s; }
 .tt-btn:hover { background: var(--magic); color: #0a0612; box-shadow: var(--glow); }
-.tt-info { max-width: 520px; margin: 6px auto 0; min-height: 24px; text-align: center; }
+
+/* 側欄 */
+.tt-side { display: flex; flex-direction: column; gap: 10px; min-width: 134px; }
+.tt-side .stat-pill { min-width: 0; }
+.tt-side .stat-pill.best .v { color: var(--cyan); font-size: 19px; }
+.tt-next { background: var(--bg-2); border: 1px solid var(--line); border-radius: 10px; padding: 10px; text-align: center; }
+.tt-next .nl { font-size: 12px; color: var(--txt-dim); margin-bottom: 6px; }
+.tt-next .n-box { display: grid; gap: 2px; justify-content: center; }
+.tt-next .n-cell { width: 24px; height: 24px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: #0a0612; }
+
+.tt-info { max-width: 540px; margin: 14px auto 0; min-height: 24px; text-align: center; }
 .tt-rx b { color: var(--gold); }
 .tt-rx p { font-size: 14px; color: var(--txt); margin-top: 2px; line-height: 1.5; }
+
+@media (max-width: 600px) {
+  .tt-wrap { gap: 12px; }
+  .tt-side { flex-direction: row; flex-wrap: wrap; min-width: 0; width: min(252px, 70vw); justify-content: center; }
+  .tt-side .stat-pill { flex: 1; }
+}
