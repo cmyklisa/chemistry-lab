@@ -54,6 +54,7 @@
         if (!board[r][c]) continue;
         [[0, 1], [1, 0]].forEach(([dr, dc]) => {
           const nr = r + dr, nc = c + dc; if (nr >= ROWS || nc >= COLS || !board[nr][nc]) return;
+          if (board[r][c] === board[nr][nc]) return;   // 同一種元素相鄰不算反應（避免整塊同元素自爆）
           const res = predict(EBS[board[r][c]], EBS[board[nr][nc]]);
           if (res.react) { mark[r][c] = mark[nr][nc] = true; any = true; if (!sample) sample = res; }
         });
