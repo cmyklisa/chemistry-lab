@@ -76,6 +76,17 @@
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', build); else build();
 
+  // 全域：點任何按鈕都有點擊聲（已有自己音效的遊戲卡牌/控制鍵除外，避免重複）
+  document.addEventListener('click', e => {
+    const b = e.target.closest && e.target.closest('button');
+    if (!b) return;
+    if (b.closest('.mem-card, .b-cardbtn, .tt-btn, .turn-btn, .sfx-toggle')) return;
+    S.click();
+  }, true);
+  // 第一次互動就建立/解鎖音訊（行動裝置的自動播放限制）
+  ['pointerdown', 'touchstart', 'keydown'].forEach(ev =>
+    document.addEventListener(ev, function unlock() { ensure(); ['pointerdown', 'touchstart', 'keydown'].forEach(x => document.removeEventListener(x, unlock)); }, { passive: true }));
+
   window.CHEM = window.CHEM || {};
   window.CHEM.sfx = S;
 })();

@@ -354,6 +354,7 @@
   M.nod = function (msg) {
     resetIdleTimer();
     say(msg || '嗯，很安全，做得好。', 3000);
+    sfx('click');
     doAction('nodding', 1200);
   };
 
@@ -377,6 +378,7 @@
   M.shrug = function (msg) {
     resetIdleTimer();
     say(msg || '唉，沒反應…（聳肩）', 3000);
+    sfx('click');
     doAction('shrugging', 1300);
   };
 
