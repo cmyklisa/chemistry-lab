@@ -57,15 +57,20 @@
   function gravity() {
     for (let c = 0; c < COLS; c++) { const col = []; for (let r = ROWS - 1; r >= 0; r--) if (board[r][c]) col.push(board[r][c]); for (let r = ROWS - 1; r >= 0; r--) board[r][c] = col[ROWS - 1 - r] || null; }
   }
-  function resolveReactions() {
-    let total = 0, chains = 0, sample = null;
+  // newSet：剛落定方塊的格子座標。第一輪只算「新格 vs 既有堆疊」的相鄰，避免方塊內部自爆；連鎖後不限制。
+  function resolveReactions(newSet) {
+    let total = 0, chains = 0, sample = null, first = true;
     while (true) {
       const mark = Array.from({ length: ROWS }, () => Array(COLS).fill(false)); let any = false;
       for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
         if (!board[r][c]) continue;
         [[0, 1], [1, 0]].forEach(([dr, dc]) => {
           const nr = r + dr, nc = c + dc; if (nr >= ROWS || nc >= COLS || !board[nr][nc]) return;
-          if (board[r][c] === board[nr][nc]) return;   // 同一種元素相鄰不算反應（避免整塊同元素自爆）
+          if (board[r][c] === board[nr][nc]) return;   // 同一種元素相鄰不算反應
+          if (first && newSet) {                        // 落地當下：必須一新一舊（方塊碰到堆疊）才反應
+            const aNew = newSet.has(r + ',' + c), bNew = newSet.has(nr + ',' + nc);
+            if (aNew === bNew) return;                   // 兩格都新(內部) 或 都舊 → 跳過
+          }
           const res = predict(EBS[board[r][c]], EBS[board[nr][nc]]);
           if (res.react) { mark[r][c] = mark[nr][nc] = true; any = true; if (!sample) sample = res; }
         });
@@ -74,14 +79,16 @@
       chains++;
       for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if (mark[r][c]) { board[r][c] = null; total++; }
       gravity();
+      first = false;
     }
     return { total, chains, sample };
   }
 
   function lockAndResolve() {
-    cellsOf(piece).forEach(cl => { if (cl.r >= 0) board[cl.r][cl.c] = cl.el; });
+    const newSet = new Set();
+    cellsOf(piece).forEach(cl => { if (cl.r >= 0) { board[cl.r][cl.c] = cl.el; newSet.add(cl.r + ',' + cl.c); } });
     sfx('click');                       // 方塊落定音
-    const { total, chains, sample } = resolveReactions();
+    const { total, chains, sample } = resolveReactions(newSet);
     if (total > 0) {
       score += total * 10 * chains; cleared += total;
       els.score.textContent = score; els.level.textContent = level();
