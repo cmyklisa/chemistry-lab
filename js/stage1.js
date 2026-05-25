@@ -285,7 +285,8 @@
       <div class="m-row"><b>原子序</b><span>${e.z}</span></div>
       <div class="m-row"><b>族別</b><span>${gname}</span></div>
       <div class="m-row"><b>週期表位置</b><span>第 ${e.p <= 7 ? e.p : (e.p === 9 ? '6（鑭系）' : '7（錒系）')} 週期</span></div>
-      <div class="persona"><span class="tag">${gname}</span><br>這個元素的完整性格檔案還沒收錄，但它在週期表的位置與族別都正確喔！</div>`;
+      <div class="m-row"><b>介紹</b><span>${e.info || '這個元素在週期表的位置與族別都正確喔！'}</span></div>
+      <div class="persona"><span class="tag">${gname}・${e.info ? '已收錄介紹' : '基本資料'}</span></div>`;
     m.querySelector('.close').onclick = closeModal;
     mask.classList.add('show');
     CHEM.mendeleev && CHEM.mendeleev.poke();

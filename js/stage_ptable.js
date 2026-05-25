@@ -18,42 +18,44 @@
   function fmt(s) { return `${String((s / 60) | 0).padStart(2, '0')}:${String((s | 0) % 60).padStart(2, '0')}`; }
   function tick() { els.time && (els.time.textContent = fmt((Date.now() - startTime) / 1000)); }
 
-  /* 把挖空的格子切成相鄰的 2~4 格拼圖塊 */
-  function buildPieces(blanks) {
-    const pool = new Map(); blanks.forEach(e => pool.set(key(e.p, e.c), e));
-    const used = new Set();
+  /* 在整張週期表上「零散」挖空 targetCount 格：從各處隨機長出 2~4 格的連通小塊，
+     讓拼圖分散到所有週期，而不是集中在上端。 */
+  function buildPuzzle(targetCount) {
+    const poolMap = new Map(); PT118.forEach(e => poolMap.set(key(e.p, e.c), e));
+    const blankZ = new Set();
     const neighbours = e => [[e.p - 1, e.c], [e.p + 1, e.c], [e.p, e.c - 1], [e.p, e.c + 1]]
-      .map(([p, c]) => pool.get(key(p, c))).filter(x => x && !used.has(key(x.p, x.c)));
-    const pieces = [];
-    shuffle(blanks.slice()).forEach(e => {
-      if (used.has(key(e.p, e.c))) return;
-      const target = 2 + ((Math.random() * 3) | 0);   // 2~4
-      const cells = [e]; used.add(key(e.p, e.c));
-      while (cells.length < target) {
+      .map(([p, c]) => poolMap.get(key(p, c))).filter(x => x && !blankZ.has(x.z));
+    const pieces = []; let guard = 0;
+    while (blankZ.size < targetCount && guard++ < 2000) {
+      const avail = PT118.filter(e => !blankZ.has(e.z));
+      if (!avail.length) break;
+      const seed = avail[(Math.random() * avail.length) | 0];           // 從整表隨機選種子 → 散布
+      const size = Math.min(2 + ((Math.random() * 3) | 0), targetCount - blankZ.size);  // 2~4，不超出剩餘
+      const cells = [seed]; blankZ.add(seed.z);
+      while (cells.length < size) {
         let grown = false;
         for (const cc of shuffle(cells.slice())) {
           const ns = neighbours(cc);
-          if (ns.length) { const n = ns[(Math.random() * ns.length) | 0]; cells.push(n); used.add(key(n.p, n.c)); grown = true; break; }
+          if (ns.length) { const n = ns[(Math.random() * ns.length) | 0]; cells.push(n); blankZ.add(n.z); grown = true; break; }
         }
         if (!grown) break;
       }
       pieces.push(cells);
-    });
-    return shuffle(pieces);
+    }
+    return { pieces: shuffle(pieces), blankZ };
   }
 
   function newGame() {
     done = false; mistakes = 0; score = 0; clearInterval(timerId); timerId = null; startTime = 0;
     els.time.textContent = '00:00'; els.win.classList.add('hidden');
-    const blanks = PT118.filter(e => e.z <= level);
-    const blankSet = new Set(blanks.map(e => e.z));
-    remaining = blanks.length; updateBar();
+    const { pieces, blankZ } = buildPuzzle(level);
+    remaining = blankZ.size; updateBar();
 
     // 週期表
     els.grid.innerHTML = ''; slotMap = new Map();
     PT118.forEach(e => {
       const col = PT_COLOR[e.group] || '#888';
-      if (blankSet.has(e.z)) {
+      if (blankZ.has(e.z)) {
         const slot = document.createElement('div');
         slot.className = 'pt-slot'; slot.dataset.z = e.z; slot.dataset.p = e.p; slot.dataset.c = e.c;
         slot.style.gridColumn = e.c; slot.style.gridRow = e.p;
@@ -74,7 +76,7 @@
 
     // 拼圖塊托盤
     els.tray.innerHTML = '';
-    buildPieces(blanks).forEach(cells => els.tray.appendChild(makeTile(cells)));
+    pieces.forEach(cells => els.tray.appendChild(makeTile(cells)));
     M() && M().say('把拼圖塊拖到週期表正確的位置！放對整塊會發綠光。', 4500);
   }
 
@@ -209,7 +211,7 @@
     [['簡單', 18], ['普通', 54], ['困難', 118]].forEach(([name, n]) => {
       const b = document.createElement('button');
       b.className = 'tab' + (n === level ? ' active' : '');
-      b.textContent = `${name}（前 ${n} 個）`;
+      b.textContent = `${name}（${n === 118 ? '全部 118' : n + ' 格'}）`;
       b.onclick = () => { level = n; [...lv.children].forEach(c => c.classList.remove('active')); b.classList.add('active'); newGame(); };
       lv.appendChild(b);
     });
