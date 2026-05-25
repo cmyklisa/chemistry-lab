@@ -106,6 +106,7 @@
     const cellRect = ev.currentTarget.getBoundingClientRect();
     drag = { cells, grabIdx, ghost, tile, offX: ev.clientX - cellRect.left, offY: ev.clientY - cellRect.top, gcx: cellRect.width / 2, gcy: cellRect.height / 2 };
     tile.classList.add('picked');
+    window.CHEM.sfx && window.CHEM.sfx.flip();   // 拾起音效
     moveGhost(ev);
     window.addEventListener('pointermove', moveGhost);
     window.addEventListener('pointerup', onDrop);

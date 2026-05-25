@@ -69,6 +69,7 @@
 
   function lockAndResolve() {
     cellsOf(piece).forEach(cl => { if (cl.r >= 0) board[cl.r][cl.c] = piece.el; });
+    sfx('click');                       // 方塊落定音
     const { total, chains, sample } = resolveReactions();
     if (total > 0) {
       score += total * 10 * chains; cleared += total;
@@ -104,6 +105,7 @@
   function pauseToggle() {
     if (over) return;
     paused = !paused;
+    sfx('click');
     if (paused) {
       clearTimeout(dropTimer);
       els.overlay.innerHTML = `<div class="tt-over"><div class="go-ico">⏸️</div><h3>暫停中</h3><p>門得列夫先坐著等你～</p><button class="btn primary" id="tt-resume">繼續</button></div>`;
