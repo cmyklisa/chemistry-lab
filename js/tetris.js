@@ -29,8 +29,9 @@
   const NONS = ['Cl', 'F', 'Br', 'O', 'S', 'N'];
   function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; }
 
-  let root_, els, board, piece, next, score, cleared, startTime, dropTimer = null;
+  let root_, els, board, piece, next, score, cleared, combo, startTime, dropTimer = null;
   let practice = false, over = false, paused = false, cellNode = [];
+  const DPTS = { safe: 1, caution: 3, danger: 5, extreme: 10 };   // 反應危險度 → 分數
   const fmt = s => `${String((s / 60) | 0).padStart(2, '0')}:${String((s | 0) % 60).padStart(2, '0')}`;
   const level = () => practice ? 1 : ((cleared / 12) | 0) + 1;
   const dropMs = () => practice ? 1300 : Math.max(140, 820 - (level() - 1) * 65);
@@ -61,7 +62,7 @@
   // → 方塊絕不會自爆；必須把方塊擺到讓某元素碰到堆疊中會反應的元素才會消除。
   function resolveReactions(newSet) {
     const mark = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
-    let total = 0, sample = null;
+    const reactions = [];                                            // 每個相鄰反應（含危險度），供計分
     for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
       if (!board[r][c]) continue;
       [[0, 1], [1, 0]].forEach(([dr, dc]) => {
@@ -70,24 +71,35 @@
         const aNew = newSet.has(r + ',' + c), bNew = newSet.has(nr + ',' + nc);
         if (aNew === bNew) return;                                    // 一定要一新一舊（方塊內部、堆疊內部都不自發反應）
         const res = predict(EBS[board[r][c]], EBS[board[nr][nc]]);
-        if (res.react) { mark[r][c] = mark[nr][nc] = true; if (!sample) sample = res; }
+        if (res.react) { mark[r][c] = mark[nr][nc] = true; reactions.push(res); }
       });
     }
+    let total = 0;
     for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if (mark[r][c]) { board[r][c] = null; total++; }
     if (total > 0) gravity();
-    return { total, chains: 1, sample };
+    return { total, reactions };
   }
 
   function lockAndResolve() {
     const newSet = new Set();
     cellsOf(piece).forEach(cl => { if (cl.r >= 0) { board[cl.r][cl.c] = cl.el; newSet.add(cl.r + ',' + cl.c); } });
-    sfx('click');                       // 方塊落定音
-    const { total, chains, sample } = resolveReactions(newSet);
-    if (total > 0) {
-      score += total * 10 * chains; cleared += total;
-      els.score.textContent = score; els.level.textContent = level();
-      boom(); sfx('explosion'); M() && M().jump(chains > 1 ? `連鎖 ${chains}！💥` : '炸掉了！💥');
-      if (sample) els.info.innerHTML = `<div class="tt-rx"><b>${sample.title}</b><p>${sample.why}</p><p class="dim">消除 ${total} 格${chains > 1 ? ` ・連鎖 ×${chains}` : ''}</p></div>`;
+    sfx('click');                       // 方塊落定音（不得分）
+    const { total, reactions } = resolveReactions(newSet);
+    if (reactions.length > 0) {
+      const base = reactions.reduce((s, r) => s + (DPTS[r.danger] || 1), 0);   // 依危險度加總（安全1/小心3/危險5/超級危險10）
+      const n = reactions.length;                                              // 同回合反應數 → 連鎖加乘
+      combo++;                                                                 // 連續回合都有反應 → combo
+      const cmult = Math.min(combo, 5);                                        // combo 加乘（最高 ×5）
+      const gained = base * n * cmult;
+      score += gained; cleared += total;
+      els.score.textContent = score; els.level.textContent = level(); els.combo.textContent = combo;
+      boom(); sfx('explosion'); M() && M().jump(n > 1 ? `${n} 連發！+${gained} 分 💥` : `+${gained} 分 💥`);
+      const worst = reactions.reduce((a, b) => (DPTS[b.danger] || 1) > (DPTS[a.danger] || 1) ? b : a);
+      els.info.innerHTML = `<div class="tt-rx"><b>${worst.title}</b><p>${worst.why}</p>
+        <p class="dim">${n} 個反應・危險加總 ${base}${n > 1 ? ` × ${n} 連鎖` : ''}${cmult > 1 ? ` × combo ${cmult}` : ''} = <b style="color:var(--gold)">+${gained}</b> 分</p></div>`;
+    } else {
+      combo = 0; if (els.combo) els.combo.textContent = 0;                     // 沒反應 → combo 中斷、完全不得分
+      els.info.innerHTML = '<div class="dim" style="font-size:14px">只是疊方塊不得分喔～想辦法讓相鄰的元素反應！</div>';
     }
     spawn();
   }
@@ -185,7 +197,7 @@
 
   /* ---------- 流程 / 掛載 ---------- */
   function start(prac) {
-    practice = prac; over = false; paused = false; score = 0; cleared = 0; startTime = Date.now();
+    practice = prac; over = false; paused = false; score = 0; cleared = 0; combo = 0; startTime = Date.now();
     board = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
     next = makePiece();
     buildShell();
@@ -199,7 +211,7 @@
     const best = (window.CHEM.records ? (window.CHEM.records.get('stage7').best || {}).score : 0) || 0;
     root_.innerHTML = `
       <h2 class="section-title">第七階段 ✦ 元素俄羅斯方塊</h2>
-      <p class="section-sub">${practice ? '慢速練習模式' : '正常模式'}：相鄰元素會反應就爆炸消除！左右移、上鍵轉、下鍵快降、空白瞬降、P 暫停。</p>
+      <p class="section-sub">${practice ? '慢速練習模式' : '正常模式'}：讓相鄰元素反應才得分（越危險分越高，同回合多反應與連續 combo 加乘，純疊方塊不得分）。左右移、上鍵轉、下鍵快降、空白瞬降、P 暫停。</p>
       <div class="tt-wrap">
         <div class="tt-board-col">
           <div class="tt-board-wrap"><div class="tt-board" id="tt-board"></div><div class="tt-overlay" id="tt-overlay"></div></div>
@@ -216,6 +228,7 @@
           <div class="stat-pill"><span class="v" id="tt-score">0</span><span class="k">分數</span></div>
           <div class="stat-pill best"><span class="v" id="tt-best">${best}</span><span class="k">最高紀錄</span></div>
           <div class="stat-pill"><span class="v" id="tt-level">1</span><span class="k">速度等級</span></div>
+          <div class="stat-pill"><span class="v" id="tt-combo">0</span><span class="k">Combo 連續</span></div>
           <div class="tt-next"><div class="nl">下一個</div><div class="n-box"></div></div>
           <button class="btn ghost" id="tt-rules">📜 規律卡</button>
           <button class="btn ghost" id="tt-menu2">↺ 換模式</button>
@@ -225,7 +238,8 @@
     els = {
       board: root_.querySelector('#tt-board'), overlay: root_.querySelector('#tt-overlay'),
       score: root_.querySelector('#tt-score'), best: root_.querySelector('#tt-best'),
-      level: root_.querySelector('#tt-level'), next: root_.querySelector('.tt-next'), info: root_.querySelector('#tt-info'),
+      level: root_.querySelector('#tt-level'), combo: root_.querySelector('#tt-combo'),
+      next: root_.querySelector('.tt-next'), info: root_.querySelector('#tt-info'),
     };
     els.board.innerHTML = ''; cellNode = [];
     for (let r = 0; r < ROWS; r++) { cellNode[r] = []; for (let c = 0; c < COLS; c++) { const d = document.createElement('div'); d.className = 'tt-cell'; els.board.appendChild(d); cellNode[r][c] = d; } }
