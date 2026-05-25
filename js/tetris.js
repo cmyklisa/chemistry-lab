@@ -13,32 +13,43 @@
   const sfx = n => window.CHEM.sfx && window.CHEM.sfx[n] && window.CHEM.sfx[n]();
 
   const COLS = 7, ROWS = 14;
-  // 七種形狀的旋轉狀態（每狀態 4 格 [列,欄] 相對位移）
-  const SHAPES = {
-    O: [[[0, 1], [0, 2], [1, 1], [1, 2]]],
-    I: [[[1, 0], [1, 1], [1, 2], [1, 3]], [[0, 2], [1, 2], [2, 2], [3, 2]]],
-    S: [[[0, 1], [0, 2], [1, 0], [1, 1]], [[0, 1], [1, 1], [1, 2], [2, 2]]],
-    Z: [[[0, 0], [0, 1], [1, 1], [1, 2]], [[0, 2], [1, 1], [1, 2], [2, 1]]],
-    L: [[[0, 2], [1, 0], [1, 1], [1, 2]], [[0, 1], [1, 1], [2, 1], [2, 2]], [[1, 0], [1, 1], [1, 2], [2, 0]], [[0, 0], [0, 1], [1, 1], [2, 1]]],
-    J: [[[0, 0], [1, 0], [1, 1], [1, 2]], [[0, 1], [0, 2], [1, 1], [2, 1]], [[1, 0], [1, 1], [1, 2], [2, 2]], [[0, 1], [1, 1], [2, 0], [2, 1]]],
-    T: [[[0, 1], [1, 0], [1, 1], [1, 2]], [[0, 1], [1, 1], [1, 2], [2, 1]], [[1, 0], [1, 1], [1, 2], [2, 1]], [[0, 1], [1, 0], [1, 1], [2, 1]]],
+  // 七種標準形狀的基本格子座標（[列,欄]）；旋轉用數學旋轉計算，每格保留自己的元素
+  const BASE = {
+    O: [[0, 0], [0, 1], [1, 0], [1, 1]],
+    I: [[0, 0], [0, 1], [0, 2], [0, 3]],
+    T: [[0, 0], [0, 1], [0, 2], [1, 1]],
+    S: [[0, 1], [0, 2], [1, 0], [1, 1]],
+    Z: [[0, 0], [0, 1], [1, 1], [1, 2]],
+    J: [[0, 0], [1, 0], [1, 1], [1, 2]],
+    L: [[0, 2], [1, 0], [1, 1], [1, 2]],
   };
-  // 形狀越複雜 → 元素越活潑
-  const TIER = { O: ['Cu', 'Zn', 'Fe', 'Ag'], I: ['Al', 'Sn', 'Mg'], S: ['O', 'S'], Z: ['N', 'C'], L: ['Cl', 'Br'], J: ['F', 'I'], T: ['Na', 'K', 'Li', 'Ca'] };
-  const SKEYS = Object.keys(SHAPES);
+  const SKEYS = Object.keys(BASE);
+  // 每塊放 2 個金屬 + 2 個非金屬（皆不同元素）→ 有反應潛力、又要靠擺放才會相鄰反應
+  const METALS = ['Na', 'K', 'Li', 'Ca', 'Mg', 'Al', 'Fe', 'Cu', 'Zn'];
+  const NONS = ['Cl', 'F', 'Br', 'O', 'S', 'N'];
+  function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; }
 
   let root_, els, board, piece, next, score, cleared, startTime, dropTimer = null;
   let practice = false, over = false, paused = false, cellNode = [];
   const fmt = s => `${String((s / 60) | 0).padStart(2, '0')}:${String((s | 0) % 60).padStart(2, '0')}`;
   const level = () => practice ? 1 : ((cleared / 12) | 0) + 1;
   const dropMs = () => practice ? 1300 : Math.max(140, 820 - (level() - 1) * 65);
-  const cellsOf = p => SHAPES[p.shape][p.rot % SHAPES[p.shape].length].map(([dr, dc]) => ({ r: p.r + dr, c: p.c + dc }));
-
-  function makePiece() { const shape = SKEYS[(Math.random() * SKEYS.length) | 0]; const pool = TIER[shape]; return { shape, el: pool[(Math.random() * pool.length) | 0] }; }
+  function rotOff(off, times) { let [dr, dc] = off; for (let t = 0; t < times; t++) { const ndr = dc, ndc = -dr; dr = ndr; dc = ndc; } return [dr, dc]; }
+  // 剛性旋轉：每格(含其元素)隨方塊一起轉，再正規化到左上角
+  function cellsOf(p) {
+    const offs = BASE[p.shape].map(o => rotOff(o, p.rot % 4));
+    const minR = Math.min(...offs.map(o => o[0])), minC = Math.min(...offs.map(o => o[1]));
+    return offs.map((o, i) => ({ r: p.r + o[0] - minR, c: p.c + o[1] - minC, el: p.els[i] }));
+  }
+  function makePiece() {
+    const shape = SKEYS[(Math.random() * SKEYS.length) | 0];
+    const m = shuffle(METALS.slice()).slice(0, 2), n = shuffle(NONS.slice()).slice(0, 2);
+    return { shape, els: shuffle([...m, ...n]) };   // 4 個不同元素隨機分配到 4 格
+  }
   function valid(p) { return cellsOf(p).every(cl => cl.c >= 0 && cl.c < COLS && cl.r < ROWS && !(cl.r >= 0 && board[cl.r][cl.c])); }
 
   function spawn() {
-    piece = { shape: next.shape, el: next.el, rot: 0, r: 0, c: 2 };
+    piece = { shape: next.shape, els: next.els, rot: 0, r: 0, c: 2 };
     next = makePiece(); renderNext();
     if (!valid(piece)) gameOver();
   }
@@ -68,7 +79,7 @@
   }
 
   function lockAndResolve() {
-    cellsOf(piece).forEach(cl => { if (cl.r >= 0) board[cl.r][cl.c] = piece.el; });
+    cellsOf(piece).forEach(cl => { if (cl.r >= 0) board[cl.r][cl.c] = cl.el; });
     sfx('click');                       // 方塊落定音
     const { total, chains, sample } = resolveReactions();
     if (total > 0) {
@@ -86,7 +97,7 @@
 
   function move(dc) { if (over || paused) return; const np = { ...piece, c: piece.c + dc }; if (valid(np)) { piece = np; render(); sfx('flip'); } }
   function rotate() {
-    if (over || paused) return; const n = (piece.rot + 1) % SHAPES[piece.shape].length;
+    if (over || paused) return; const n = (piece.rot + 1) % 4;
     for (const dc of [0, -1, 1, -2, 2]) { const np = { ...piece, rot: n, c: piece.c + dc }; if (valid(np)) { piece = np; render(); sfx('flip'); return; } }
   }
   function soft() { if (over || paused) return; if (valid({ ...piece, r: piece.r + 1 })) piece.r++; else lockAndResolve(); render(); }
@@ -122,7 +133,7 @@
   /* ---------- 畫面 ---------- */
   function render() {
     const disp = board.map(r => r.slice());
-    if (piece && !over) cellsOf(piece).forEach(cl => { if (cl.r >= 0 && cl.r < ROWS && cl.c >= 0 && cl.c < COLS) disp[cl.r][cl.c] = piece.el; });
+    if (piece && !over) cellsOf(piece).forEach(cl => { if (cl.r >= 0 && cl.r < ROWS && cl.c >= 0 && cl.c < COLS) disp[cl.r][cl.c] = cl.el; });
     for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
       const sym = disp[r][c], node = cellNode[r][c];
       if (sym) { const g = GROUPS[EBS[sym].group]; node.className = 'tt-cell on'; node.style.setProperty('--gcol', g.color); node.textContent = sym; }
@@ -131,11 +142,9 @@
   }
   function renderNext() {
     if (!els.next) return;
-    const cells = SHAPES[next.shape][0];
-    const minR = Math.min(...cells.map(c => c[0])), minC = Math.min(...cells.map(c => c[1]));
-    const g = GROUPS[EBS[next.el].group];
+    const cells = cellsOf({ shape: next.shape, els: next.els, rot: 0, r: 0, c: 0 });
     const box = els.next.querySelector('.n-box'); box.innerHTML = '';
-    cells.forEach(([r, c]) => { const d = document.createElement('div'); d.className = 'n-cell'; d.style.gridRow = r - minR + 1; d.style.gridColumn = c - minC + 1; d.style.background = g.color; d.textContent = next.el; box.appendChild(d); });
+    cells.forEach(cl => { const g = GROUPS[EBS[cl.el].group]; const d = document.createElement('div'); d.className = 'n-cell'; d.style.gridRow = cl.r + 1; d.style.gridColumn = cl.c + 1; d.style.background = g.color; d.textContent = cl.el; box.appendChild(d); });
   }
   function boom() { els.board.classList.remove('flash'); void els.board.offsetWidth; els.board.classList.add('flash'); }
 
